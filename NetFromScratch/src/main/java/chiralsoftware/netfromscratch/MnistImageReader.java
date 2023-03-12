@@ -1,10 +1,9 @@
 package chiralsoftware.netfromscratch;
 
-import java.io.File;
-import static java.lang.System.out;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Read in the image data and label files for MNIST.
@@ -16,24 +15,19 @@ public final class MnistImageReader {
     private static final Logger LOG = Logger.getLogger(MnistImageReader.class.getName());
     
     public static void main(String[] args) throws Exception {
-        final String fileName = "train-images-idx3-ubyte";
-        final File f = new File(fileName);
-        if(! f.canRead()) {
-            LOG.info("can't read: "+ f);
-            return;
-        }
-        final Path p = f.toPath();
-        final byte[] imageFile = Files.readAllBytes(p);
-        LOG.info("Read in: "  + imageFile.length  + " bytes");
-        LOG.info("First bytes: " + (int) imageFile[0] + ", " + (int) imageFile[1]);
-        final int offset = 16 + 1*28*28;
-        for(int y  = 0; y < 28; y++) {
-            final StringBuilder line = new StringBuilder();
-            for(int x = 0; x < 28; x++) {
-                out.format("%3d ", imageFile[y * 28 + x + offset] & 0xff);
-            }
-            out.println();
-        }
+        final String trainFileName = "train-images-idx3-ubyte.gz";
+        final GZIPInputStream gzin = new GZIPInputStream(new FileInputStream(trainFileName));
+        // first 16 bytes are magic number
+        final byte[] magicNumber = new byte[16];
+        gzin.read(magicNumber);
+        System.out.println("Magic number is: " + Arrays.toString(magicNumber));
+        
+        final byte[] oneImage = new byte[28*28];
+        gzin.read(oneImage);
+        final int offset = 0;
+        final Image image = new Image(1, oneImage);
+        System.out.println(image.show());
+        System.out.println("I finished reading the image.");
     }
     
 }
