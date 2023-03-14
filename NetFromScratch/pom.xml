@@ -11,4 +11,13 @@
         <maven.compiler.target>19</maven.compiler.target>
         <exec.mainClass>chiralsoftware.netfromscratch.NetFromScratch</exec.mainClass>
     </properties>
+    
+    <dependencies>
+<dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+    <version>31.1-jre</version>
+</dependency>
+        
+    </dependencies>
 </project>

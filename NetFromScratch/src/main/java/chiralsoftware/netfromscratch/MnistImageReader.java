@@ -1,6 +1,8 @@
 package chiralsoftware.netfromscratch;
 
+import static com.google.common.io.ByteStreams.readFully;
 import java.io.FileInputStream;
+import java.io.IOException;
 import static java.lang.System.out;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -47,23 +49,24 @@ public final class MnistImageReader {
             return;
         }
         
-        final Image[] images = new Image[imagesIdxHeader.dimensions()[0]];
-        final byte[] oneImage = new byte[28*28];
+//        final Image[] images = new Image[imagesIdxHeader.dimensions()[0]];
+        // for some reason this file seems truncated at 60000 images
+        final Image[] images = new Image[60000];
         for(int i = 0; i < images.length; i++) {
-
-        imageGzin.read(oneImage);
-        images[i] = new Image(labelGzin.read(), oneImage);
+            final byte[] oneImage = new byte[28*28];
+            readFully(imageGzin, oneImage);
+            images[i] = new Image(labelGzin.read(), oneImage);
         }
         
         out.println("Read in: " + images.length + " images. here are a few: ");
         out.println(images[0].show());
-        out.println();
-        out.println(images[22].show());
-        out.println();
-        out.println(images[52].show());
-        out.println();
-        out.println(images[63].show());
-        out.println();
+        out.println("--------------------");
+        out.println(images[1].show());
+        out.println("--------------------");
+        out.println(images[2].show());
+        out.println("--------------------");
+        out.println(images[3].show());
+        out.println("--------------------");
         out.println(images[101].show());
         out.println();
         
