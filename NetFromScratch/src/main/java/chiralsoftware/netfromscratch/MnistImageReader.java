@@ -22,34 +22,51 @@ public final class MnistImageReader {
         
         final GZIPInputStream labelGzin = new GZIPInputStream(new FileInputStream(labelFileName));
         
-        final byte[] letsSee = new byte[200];
-        labelGzin.read(letsSee);
-        for(int i = 0; i < letsSee.length; i++) {
-            out.println(i + ": " + letsSee[i]);
+//        final byte[] letsSee = new byte[20];
+//        labelGzin.read(letsSee);
+//        for(int i = 0; i < letsSee.length; i++) {
+//            out.println(i + ": " + letsSee[i]);
+//        }
+//        
+        final IdxHeader imagesIdxHeader = IdxHeader.read(imageGzin);
+        final IdxHeader labelIdxHeader = IdxHeader.read(labelGzin);
+        
+        out.println("Images idx header: " + imagesIdxHeader.dataType() + ", " + Arrays.toString(imagesIdxHeader.dimensions()));
+        out.println("Labels idx header: " + labelIdxHeader.dataType() + ", " + Arrays.toString(labelIdxHeader.dimensions()));
+        
+        if(imagesIdxHeader.dimensions()[1] != 28) {
+            out.println("wrong image width; should be 28");
+            return;
         }
-        if(true) return;
-        // first 16 bytes are magic number
-        final byte[] magicNumber = new byte[16];
-        imageGzin.read(magicNumber);
-        // see:
-        // https://medium.com/the-owl/converting-mnist-data-in-idx-format-to-python-numpy-array-5cb9126f99f1
-        // for details about these values
-        if(! Arrays.equals(magicNumber, new byte[] {
-            0, 0, // always zero 
-            8, // values are unsigned bytes
-            3, 
-            0, 0, -22, 96, 
-            0, 0, 0, 28, 0, 0, 0, 28 // this is the shape of the images
-        })) {
-            System.out.println("file isn't a valid MNIST image file");
+        if(imagesIdxHeader.dimensions()[2] != 28) {
+            out.println("wrong image height; should be 28");
+            return;
+        }
+        if(imagesIdxHeader.dimensions()[0] != labelIdxHeader.dimensions()[0]) {
+            out.println("the number of images and labels don't match");
             return;
         }
         
+        final Image[] images = new Image[imagesIdxHeader.dimensions()[0]];
         final byte[] oneImage = new byte[28*28];
+        for(int i = 0; i < images.length; i++) {
+
         imageGzin.read(oneImage);
-        final Image image = new Image(1, oneImage);
-        System.out.println(image.show());
-        System.out.println("I finished reading the image.");
+        images[i] = new Image(labelGzin.read(), oneImage);
+        }
+        
+        out.println("Read in: " + images.length + " images. here are a few: ");
+        out.println(images[0].show());
+        out.println();
+        out.println(images[22].show());
+        out.println();
+        out.println(images[52].show());
+        out.println();
+        out.println(images[63].show());
+        out.println();
+        out.println(images[101].show());
+        out.println();
+        
     }
     
 }
