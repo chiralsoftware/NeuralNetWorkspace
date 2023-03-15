@@ -1,5 +1,7 @@
 package chiralsoftware.netfromscratch;
 
+import static java.lang.Math.exp;
+import static java.lang.System.out;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -26,7 +28,7 @@ public final class Neuron {
         float result = 0;
         for(int i = 0; i < weights.length; i++)
             result += weights[i] * input[i];
-        return result + bias;
+        return sigmoid(result + bias);
     }
     
     /** Apply the weights and bias and sigmoid to calculate the output */
@@ -39,15 +41,25 @@ public final class Neuron {
         float result = 0;
         for(int i = 0; i < weights.length; i++)
             result += weights[i] * input[i];
-        return result + bias;
+        return sigmoid(result + bias);
+    }
+    
+    /** Sigmoid activation */
+    static float sigmoid(float input) {
+        out.println("input was: " + input);
+        return (float) (1 / (1 + exp(input * -1)));
+    }
+    
+    static float sigmoidDerivative(float x) {
+        return sigmoid(x) * (1 - sigmoid(x));
     }
     
     void initialize() {
         final Random random = new Random();
         for(int i = 0; i < weights.length; i++) {
-            weights[i] = random.nextFloat(1)* 0.1f;
+            weights[i] = 0.01f - random.nextFloat(0.02f);
         }
-        bias = random.nextFloat(1)* 0.1f;;
+        bias = 0.1f - random.nextFloat(0.2f);
     }
     
     @Override
