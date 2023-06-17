@@ -25,13 +25,13 @@ public final class Train {
             // pick a representative image
             final Image im = images[random.nextInt(images.length)];
             im.toFloat(fa);
-            final float result=sigmoidLogistic(neuron.calculate(fa));
+            final float result=neuron.calculate(fa);
             final float expectedResult;
             if(im.label() == 7) expectedResult = 1;
             else expectedResult = 0;
             final float error = expectedResult - result;
             
-            LOG.info("iteration " + i + ", result: " + result);
+            LOG.info("iteration " + i + ", label: + " + im.label() + ", result: " + result + ", error=" + error);
         }
     }
     
