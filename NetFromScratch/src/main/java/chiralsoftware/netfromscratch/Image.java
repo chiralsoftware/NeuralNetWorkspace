@@ -21,6 +21,14 @@ public record Image(int label, byte[] data) {
         return result.toString();
     }
     
+    void toFloat(float[] fa) {
+        if(fa.length != data.length) throw new RuntimeException("float array length: " + fa.length + 
+                " did not match data array length");
+        for(int i = 0; i < data.length; i++ ) {
+            fa[i] = (float) (data[i] & 0xff) / 256f;
+        }
+    }
+    
     public static String imageByteToAscii(byte b) {
         final int value = b & 0xff;
         if(value == 0) return " ";

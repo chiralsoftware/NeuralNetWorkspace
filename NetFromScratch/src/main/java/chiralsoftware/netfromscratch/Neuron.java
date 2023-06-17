@@ -1,10 +1,11 @@
 package chiralsoftware.netfromscratch;
 
+import java.util.Arrays;
 import java.util.Random;
 
 /**
  * Represent a single neuron, which includes a set of weights
- * and a bias
+ * and a bias. 
  */
 public final class Neuron {
     
@@ -31,9 +32,14 @@ public final class Neuron {
     void initialize() {
         final Random random = new Random();
         for(int i = 0; i < weights.length; i++) {
-            weights[i] = random.nextInt(1)* 0.1f;
+            weights[i] = random.nextFloat() * 0.1f;
         }
         bias = 0;
+    }
+    
+    @Override
+    public String toString() {
+        return "Neuron: bias=" + bias + ", weights=" + Arrays.toString(weights);
     }
     
     

@@ -2,7 +2,6 @@ package chiralsoftware.netfromscratch;
 
 import static com.google.common.io.ByteStreams.readFully;
 import java.io.FileInputStream;
-import java.io.IOException;
 import static java.lang.System.out;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -17,6 +16,11 @@ public final class MnistImageReader {
 
     private static final Logger LOG = Logger.getLogger(MnistImageReader.class.getName());
     
+//        final Image[] images = new Image[imagesIdxHeader.dimensions()[0]];
+        // for some reason this file seems truncated at 60000 images
+        
+    public static final Image[] images = new Image[60000];
+
     public static void main(String[] args) throws Exception {
         final String trainFileName = "train-images-idx3-ubyte.gz";
         final String labelFileName = "train-labels-idx1-ubyte.gz";
@@ -49,26 +53,26 @@ public final class MnistImageReader {
             return;
         }
         
-//        final Image[] images = new Image[imagesIdxHeader.dimensions()[0]];
-        // for some reason this file seems truncated at 60000 images
-        final Image[] images = new Image[60000];
         for(int i = 0; i < images.length; i++) {
             final byte[] oneImage = new byte[28*28];
             readFully(imageGzin, oneImage);
             images[i] = new Image(labelGzin.read(), oneImage);
         }
         
-        out.println("Read in: " + images.length + " images. here are a few: ");
-        out.println(images[0].show());
-        out.println("--------------------");
-        out.println(images[1].show());
-        out.println("--------------------");
-        out.println(images[2].show());
-        out.println("--------------------");
-        out.println(images[3].show());
-        out.println("--------------------");
-        out.println(images[101].show());
-        out.println();
+//        out.println("Read in: " + images.length + " images. here are a few: ");
+//        out.println(images[0].show());
+//        out.println("--------------------");
+//        out.println(images[1].show());
+//        out.println("--------------------");
+//        out.println(images[2].show());
+//        out.println("--------------------");
+//        out.println(images[3].show());
+//        out.println("--------------------");
+         out.println(images[101].show());
+//        out.println();
+
+           out.println("let's try training...");
+           Train.train(images);
         
     }
     
