@@ -12,9 +12,15 @@ public final class Neuron {
     
     private final float[] weights;
     private float bias;
+    private final Activation activation;
     
-    Neuron(int weights) {
+    /** For use in training */
+    float error;
+    float input;
+    
+    Neuron(int weights, Activation activation) {
         this.weights = new float[weights];
+        this.activation = activation;
     }
     
     /** Apply the weights to byte input. This is for the MNIST input layer, which are bytes */
@@ -27,7 +33,7 @@ public final class Neuron {
         float result = 0;
         for(int i = 0; i < weights.length; i++)
             result += weights[i] * input[i];
-        return sigmoid(result + bias);
+        return activation.activation(result + bias);
     }
     
     /** Apply the weights and bias and sigmoid to calculate the output */
@@ -40,16 +46,7 @@ public final class Neuron {
         float result = 0;
         for(int i = 0; i < weights.length; i++)
             result += weights[i] * input[i];
-        return sigmoid(result + bias);
-    }
-    
-    /** Sigmoid activation */
-    static float sigmoid(float input) {
-        return (float) (1 / (1 + exp(input * -1)));
-    }
-    
-    static float sigmoidDerivative(float x) {
-        return sigmoid(x) * (1 - sigmoid(x));
+        return activation.activation(result + bias);
     }
     
     void initialize() {
@@ -63,6 +60,10 @@ public final class Neuron {
     @Override
     public String toString() {
         return "bias: " + bias + ", weights: " + Arrays.toString(weights);
+    }
+
+    float derivative(float output) {
+        return activation.derivative(output);
     }
     
     

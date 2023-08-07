@@ -1,5 +1,6 @@
 package chiralsoftware.netfromscratch;
 
+import static chiralsoftware.netfromscratch.Activations.sigmoidLogistic;
 import static java.lang.System.out;
 
 public final class NetFromScratch {
@@ -9,7 +10,7 @@ public final class NetFromScratch {
         
         out.println("Step 1: create a single neuron of the right shape and initialize it");
         
-        final Neuron neuron = new Neuron(28*28);
+        final Neuron neuron = new Neuron(28*28, sigmoidLogistic);
         neuron.initialize();
         out.println("Created a neuron: " + neuron);
         out.println("Step 2: load the MINST images");

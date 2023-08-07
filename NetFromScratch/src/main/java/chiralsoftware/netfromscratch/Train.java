@@ -14,6 +14,8 @@ public final class Train {
     
     private static final Random random = new Random();
     
+    private static final float learningRate = 0.05f;
+    
     static void train(Image[] images) {
         final Neuron neuron = new Neuron(28 *28);
         final float[] fa = new float[28*28];
@@ -25,14 +27,15 @@ public final class Train {
             // pick a representative image
             final Image im = images[random.nextInt(images.length)];
             im.toFloat(fa);
-            final float result=neuron.calculate(fa);
-            final float expectedResult;
-            if(im.label() == 7) expectedResult = 1;
-            else expectedResult = 0;
-            final float error = expectedResult - result;
+            final float output=neuron.calculate(fa);
+            final float expected;
+            if(im.label() == 7) expected = 1;
+            else expected = 0;
+            final float error = (output - expected) * neuron.derivative(output);
             
-            LOG.info("iteration " + i + ", label: + " + im.label() + ", result: " + result + ", error=" + error);
+            LOG.info("iteration " + i + ", label: + " + im.label() + ", result: " + output + ", error=" + error);
         }
+        // now we need to adjust these weights
     }
     
 }
