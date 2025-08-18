@@ -9,9 +9,9 @@ final class Activations {
     
     private Activations() { throw new RuntimeException(); }
     
-    public static final Activation sigmoidLogistic = new Activation() {
+    public static final ActivationFunction sigmoidLogistic = new ActivationFunction() {
         @Override
-        public float activation(float activation) {
+        public float activate(float activation) {
             return (float) (1 / (1 + exp(-1 * activation)));
         }
 

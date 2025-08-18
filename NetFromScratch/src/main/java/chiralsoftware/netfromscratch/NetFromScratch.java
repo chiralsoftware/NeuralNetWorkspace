@@ -1,7 +1,10 @@
 package chiralsoftware.netfromscratch;
 
 import static chiralsoftware.netfromscratch.Activations.sigmoidLogistic;
+import static chiralsoftware.netfromscratch.Losses.mseLoss;
 import static java.lang.System.out;
+import java.lang.annotation.Target;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 public final class NetFromScratch {
@@ -20,6 +23,10 @@ public final class NetFromScratch {
         
         final Layer layer = new Layer(neurons, sigmoidLogistic);
         
+        out.println("Creating the Network object");
+        final LossFunction lossFunction = mseLoss();
+        final Network network = new Network(layer, lossFunction);
+        
         out.println("Apply the layer to a test image");
         final Image image = MnistImageReader.images[101];
         out.println("Looking at image: " + image.label());
@@ -29,19 +36,13 @@ public final class NetFromScratch {
         
         final float[] imageFloat = new float[28*28];
         image.toFloat(imageFloat);
-        final float[] activated = layer.calculate(imageFloat);
-        out.println("and the amazing result is: "+ Arrays.toString(activated));
-        final float[] target = new float[10];
-        target[image.label()] = 1f;
-        
-        out.println("calculating error:");
-        float error = 0f;
-        for (int i = 0; i < 10; i++) {
-            float diff = activated[i] - target[i];
-            error += diff * diff;
-        }
-        error /= 10f;
-        out.println("MSE error: " + error);
 
+        final float[] output = network.predict(imageFloat);
+        out.println("and the output is: "+ Arrays.toString(output));
+        final float[] target = new float[10];
+        target[image.label()] = 1;
+        
+        network.train(imageFloat, target);
+        
     }
 }
