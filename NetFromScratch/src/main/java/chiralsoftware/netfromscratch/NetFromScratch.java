@@ -20,22 +20,19 @@ public final class NetFromScratch {
             neurons[i] = Neuron.random(28*28);
         }
         out.print("creating the one layer");
-        
-        final Layer layer = new Layer(neurons, sigmoidLogistic);
-        
-        out.println("Creating the Network object");
-        final LossFunction lossFunction = mseLoss();
-        final Network network = new Network(layer, lossFunction);
-        
-        out.println("Apply the layer to a test image");
+
         final Image image = MnistImageReader.images[101];
         out.println("Looking at image: " + image.label());
         out.println(image.show());
         
         out.println("applying network");
         
+        final Layer layer = new SoftMaxLayer(neurons);
+        final Network network = new Network(layer);
+        
         final float[] imageFloat = new float[28*28];
         image.toFloat(imageFloat);
+        
 
         final float[] output = network.predict(imageFloat);
         out.println("and the output is: "+ Arrays.toString(output));

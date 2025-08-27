@@ -53,10 +53,10 @@ public class Neuron {
                     " and weights[] length: " + weights.length);
         
         for(int i = 0; i < weights.length; i++ ) {
-            weights[i] -= f * input[i] * 0.01; 
+            weights[i] -= f * input[i] * Network.learningRate; 
         }
         // dL_i/db = loss'(activation(z)) * activation'(w_i * x_i + b) 
-        bias -= f * 0.01f;
+        bias -= f * Network.learningRate;
     }
     
 }

@@ -18,5 +18,23 @@ final class Losses {
             }
         };
     }
+    
+    /**
+     loss = -[y * log(a) + (1 - y) * log(1 - a)]
+    loss' = a - y
+    */
+    static LossFunction crossEntropyLoss = new LossFunction() {
+        @Override
+        public float loss(float y_hat, float y) {
+            return  -1 * (
+                    y_hat * (float) Math.log(y) + (1 - y_hat) * (float) Math.log(1 - y)
+            );
+        }
+
+        @Override
+        public float derivative(float y_hat, float y) {
+            return y - y_hat;
+        }
+    };
 
 }
