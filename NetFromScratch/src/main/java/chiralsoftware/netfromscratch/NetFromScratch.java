@@ -1,11 +1,8 @@
 package chiralsoftware.netfromscratch;
 
-import static chiralsoftware.netfromscratch.Activations.sigmoidLogistic;
-import static chiralsoftware.netfromscratch.Losses.mseLoss;
 import static java.lang.System.out;
-import java.lang.annotation.Target;
-import java.text.DecimalFormat;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class NetFromScratch {
 
@@ -21,25 +18,27 @@ public final class NetFromScratch {
         }
         out.print("creating the one layer");
 
-        final Image image = MnistImageReader.images[101];
-        out.println("Looking at image: " + image.label());
-        out.println(image.show());
+//        final Layer layer = new SoftMaxLayer(neurons);
+        final Layer layer = new ActivationLayer(neurons,Activations.sigmoidLogistic, Losses.mseLoss());
+        final Network network = new Network(layer);
+        
+        final List<Sample> samples = new ArrayList<>();
+
         
         out.println("applying network");
         
-        final Layer layer = new SoftMaxLayer(neurons);
-        final Network network = new Network(layer);
-        
-        final float[] imageFloat = new float[28*28];
-        image.toFloat(imageFloat);
-        
+        for(int i = 101; i < 150; i++) {
+            final Image image = MnistImageReader.images[i];
+            out.println("Looking at image: " + image.label());
+            out.println(image.show());
+            final float[] imageFloat = new float[28*28];
+            image.toFloat(imageFloat);
+            final float[] target = new float[10];
+            target[image.label()] = 1f;
+            samples.add(new Sample(imageFloat, target));
+        }
 
-        final float[] output = network.predict(imageFloat);
-        out.println("and the output is: "+ Arrays.toString(output));
-        final float[] target = new float[10];
-        target[image.label()] = 1;
-        
-        network.train(imageFloat, target);
+        network.train(samples);
         
     }
 }

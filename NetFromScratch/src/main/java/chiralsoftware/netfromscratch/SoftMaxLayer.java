@@ -5,16 +5,13 @@ package chiralsoftware.netfromscratch;
 */
 final class SoftMaxLayer extends Layer {
 
-    SoftMaxLayer(Neuron[] neurons) {  
-        this.neurons = neurons;
-    }  
+    SoftMaxLayer(Neuron[] neurons) {
+        super(neurons);
+    }
 
     @Override
     public float[] forward(float[] input) {
-        float[] raw = new float[neurons.length];
-        for (int i = 0; i < neurons.length; i++) {
-            raw[i] = neurons[i].calculateRaw(input);
-        }
+        float[] raw = raw(input);
         return softmax(raw);
     }
 
