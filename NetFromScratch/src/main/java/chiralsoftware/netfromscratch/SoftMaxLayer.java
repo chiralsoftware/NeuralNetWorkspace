@@ -35,10 +35,9 @@ final class SoftMaxLayer extends Layer {
     }
 
     @Override
-    public void update(float[] gradient, float[] input) {
-        for (int i = 0; i < neurons.length; i++) {
-            neurons[i].adjust(gradient[i], input);
-        }
+    void update(float[] accumulatedWeightedGradient, float[]  accumulatedBiasGradient) {
+        for(int i =0 ;i < neurons.length; i++)
+            neurons[i].adjust(accumulatedWeightedGradient, accumulatedBiasGradient[i]);
     }
 
     private static float[] softmax(float[] raw) {

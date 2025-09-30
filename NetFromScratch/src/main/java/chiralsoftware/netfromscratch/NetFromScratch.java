@@ -3,6 +3,7 @@ package chiralsoftware.netfromscratch;
 import static java.lang.System.out;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public final class NetFromScratch {
 
@@ -27,7 +28,7 @@ public final class NetFromScratch {
         
         out.println("applying network");
         
-        for(int i = 101; i < 150; i++) {
+        for(int i = 101; i < 1150; i++) {
             final Image image = MnistImageReader.images[i];
             out.println("Looking at image: " + image.label());
             out.println(image.show());
@@ -38,7 +39,17 @@ public final class NetFromScratch {
             samples.add(new Sample(imageFloat, target));
         }
 
-        network.train(samples);
+        final Random random = new Random();
         
+        network.train(samples);
+        out.println("Training complete. Doing some predictions....");
+        for(int i = 0; i < 10; i++) {
+            final Sample sample = samples.get(random.nextInt(samples.size()));
+            final float[] prediction = network.predict(sample.x());
+            out.println(sample.toString());
+            out.println(Network.showTarget(sample.target(), prediction));
+            out.println();
+            
+        }
     }
 }

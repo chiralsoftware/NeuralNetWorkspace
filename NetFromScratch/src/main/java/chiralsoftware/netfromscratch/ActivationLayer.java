@@ -33,16 +33,24 @@ final class ActivationLayer extends Layer {
 
     @Override
     float[] computeGradient(float[] prediction, float[] target) {
-        final float[] result = new float[prediction.length];
-        for(int i = 0; i < result.length; i++) 
-            result[i] = lossFunction.derivative(target[i], prediction[i]);
+            
+        float[] result = new float[prediction.length];
+        for (int i = 0; i < result.length; i++) {
+            final float lossGrad = lossFunction.derivative(target[i], prediction[i]);
+            final float activationGrad = activationFunction.derivative(lastRaw[i]);
+            result[i] = lossGrad * activationGrad;
+        }
         return result;
+//        final float[] result = new float[prediction.length];
+//        for(int i = 0; i < result.length; i++) 
+//            result[i] = lossFunction.derivative(target[i], prediction[i]);
+//        return result;
     }
 
     @Override
-    void update(float[] gradient, float[] input) {
+    void update(float[] accumulatedWeightedGradient, float[]  accumulatedBiasGradient) {
         for(int i =0 ;i < neurons.length; i++)
-            neurons[i].adjust(gradient[i], input);
+            neurons[i].adjust(accumulatedWeightedGradient, accumulatedBiasGradient[i]);
     }
     
 }

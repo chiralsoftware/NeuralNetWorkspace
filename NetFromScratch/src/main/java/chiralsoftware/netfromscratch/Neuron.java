@@ -46,16 +46,11 @@ public class Neuron {
         return "bias: " + bias + ", weights: " + Arrays.toString(weights);
     }
 
-    void adjust(float f, float[] input) {
-        if(weights.length != input.length)
-            throw new IllegalArgumentException("input length: " + input.length + 
-                    " and weights[] length: " + weights.length);
-        
-        for(int i = 0; i < weights.length; i++ ) {
-            weights[i] -= f * input[i] * Network.learningRate; 
+    void adjust(float[] weightGradient, float biasGradient) {
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] -= weightGradient[i] * Network.learningRate;
         }
-        // dL_i/db = loss'(activation(z)) * activation'(w_i * x_i + b) 
-        bias -= f * Network.learningRate;
+        bias -= biasGradient * Network.learningRate;
     }
-    
+        
 }
