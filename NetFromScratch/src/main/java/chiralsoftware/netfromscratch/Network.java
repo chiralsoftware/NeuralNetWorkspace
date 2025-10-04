@@ -22,14 +22,14 @@ final class Network {
         return outputLayer.forward(x);
     }
     
-    int epochs = 1000;
+    int epochs = 600;
     
     void train(List<Sample> samples) {
+        System.out.println("training on: " + samples.size() + " samples");
         final DecimalFormat df = new DecimalFormat("0.0000");
         final List<List<Sample>> partitionedSamples = partition(samples, 32);
         final List<Batch> batches = partitionedSamples.stream().
                 map(l -> new Batch(l, outputLayer)).collect(toUnmodifiableList());
-        LOG.log(INFO, "samples size: " + samples.size() + " and batches size: " + batches.size());
         
         for (int epoch = 0; epoch < epochs; epoch++) {
             float loss = 0;
@@ -55,16 +55,47 @@ final class Network {
     }
     
     private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_RED = "\u001B[31m";
     private static final String ANSI_GREEN = "\u001B[32m";
     
     static String showTarget(float[] target, float[] prediction) {
+        int correctResult = -1;
+        float max = Float.MIN_VALUE;
+        for(int i = 0; i < target.length; i++) {
+            if(target[i] > max) {
+                max = target[i];
+                correctResult = i;
+            }
+        }
+        if(correctResult < 0) return "ERROR1";
+        int predicted = -1;
+        max = Float.MIN_VALUE;
+        for(int i = 0; i < prediction.length; i++) {
+            if(prediction[i] > max) {
+                max = prediction[i];
+                predicted = i;
+            }
+        }
+        if(predicted < 0) return "ERROR2";
+        final boolean correct = correctResult == predicted;
+        
         final DecimalFormat df = new DecimalFormat("0.0000");
         final StringBuilder sb = new StringBuilder();
+        boolean resetRequired = false;
         for(int i = 0 ; i < prediction.length; i++ ) {
-            final boolean yeahMan = target[i] > 0.99f;
-            if(yeahMan) sb.append(ANSI_GREEN);
+            if(! correct && i == predicted) {
+                sb.append(ANSI_RED);
+                resetRequired = true;
+            }
+            if(i == correctResult) {
+                sb.append(ANSI_GREEN);
+                resetRequired = true;
+            }
             sb.append(df.format(prediction[i]));
-            if(yeahMan) sb.append(ANSI_RESET);
+            if(resetRequired) {
+                sb.append(ANSI_RESET);
+                resetRequired = false;
+            }
             sb.append("   ");
         }
         return sb.toString();
