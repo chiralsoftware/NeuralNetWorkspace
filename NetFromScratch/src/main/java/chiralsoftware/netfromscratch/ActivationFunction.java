@@ -5,7 +5,7 @@ package chiralsoftware.netfromscratch;
  */
 public interface ActivationFunction {
     
-    public float activate(float input);
+    public float[] activate(float[] input);
     
     public float derivative(float output);
     

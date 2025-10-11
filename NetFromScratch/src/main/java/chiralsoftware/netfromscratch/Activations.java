@@ -11,8 +11,12 @@ final class Activations {
     
     public static final ActivationFunction sigmoidLogistic = new ActivationFunction() {
         @Override
-        public float activate(float activation) {
-            return (float) (1 / (1 + exp(-1 * activation)));
+        public float[] activate(float[] activation) {
+            final float[] result = new float[activation.length];
+            for(int i = 0; i < activation.length; i++) {
+                result[i] = (float) (1 / (1 + exp(-1 * activation[i])));
+            }
+            return result;
         }
 
         @Override

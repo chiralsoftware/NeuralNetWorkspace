@@ -6,6 +6,8 @@ import java.util.Random;
 /**
  * Represent a single neuron, which includes a set of weights
  * and a bias. 
+ * @deprecated all this has moved into the Layer. In the end a neuron is just a list of weights
+ * and a bias.
  */
 public class Neuron {
     
@@ -26,6 +28,8 @@ public class Neuron {
     private Neuron(int size) {
         this.weights = new float[size];
     }
+    
+    public int size() { return weights.length; }
             
     /** Apply the weights and bias to the input. Return result is raw - no activation function is applied. */
     float calculateRaw(float[] input) {

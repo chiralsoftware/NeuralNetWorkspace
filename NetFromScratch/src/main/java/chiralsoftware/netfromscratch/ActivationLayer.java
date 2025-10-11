@@ -3,26 +3,15 @@ package chiralsoftware.netfromscratch;
 /**
  * Mean Square Error layer
  */
-final class ActivationLayer extends Layer {
+abstract class ActivationLayer extends Layer {
 
-    private final ActivationFunction activationFunction;
-    private final LossFunction lossFunction;
+    private ActivationFunction activationFunction;
+    private LossFunction lossFunction;
     
-    ActivationLayer(Neuron[] neurons, ActivationFunction activationFunction, LossFunction lossFunction) {
-        super(neurons);
-        this.activationFunction = activationFunction;
-        this.lossFunction = lossFunction;
+    ActivationLayer(int inputSize, int outputSize) {
+        super(inputSize, outputSize);
     }
 
-    @Override
-    float[] forward(float[] input) {
-        final float raw[] = raw(input);
-        for(int i = 0; i < raw.length; i++)
-            raw[i] = activationFunction.activate(raw[i]);
-        return raw;
-    }
-
-    @Override
     float computeLoss(float[] prediction, float[] target) {
         float sum = 0;
         for(int i = 0; i < prediction.length; i++) {
@@ -31,26 +20,19 @@ final class ActivationLayer extends Layer {
         return sum / target.length;
     }
 
-    @Override
-    float[] computeGradient(float[] prediction, float[] target) {
-            
-        float[] result = new float[prediction.length];
-        for (int i = 0; i < result.length; i++) {
-            final float lossGrad = lossFunction.derivative(target[i], prediction[i]);
-            final float activationGrad = activationFunction.derivative(lastRaw[i]);
-            result[i] = lossGrad * activationGrad;
-        }
-        return result;
-//        final float[] result = new float[prediction.length];
-//        for(int i = 0; i < result.length; i++) 
-//            result[i] = lossFunction.derivative(target[i], prediction[i]);
-//        return result;
-    }
 
     @Override
     void update(float[] accumulatedWeightedGradient, float[]  accumulatedBiasGradient) {
-        for(int i =0 ;i < neurons.length; i++)
-            neurons[i].adjust(accumulatedWeightedGradient, accumulatedBiasGradient[i]);
+    }
+
+    @Override
+    protected float[] activated(float[] raw) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    protected float loss(float[] input, float[] target) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
     
 }

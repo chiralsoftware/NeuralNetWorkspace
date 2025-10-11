@@ -14,19 +14,15 @@ public final class NetFromScratch {
         out.println("Testing network from scratch");
         MnistImageReader.load();
         out.print("Mnist set loaded");
-        
-        out.println("creating ten neurons");
-        final Neuron[] neurons = new Neuron[10];
-        for(int i = 0; i < neurons.length; i++ ) {
-            neurons[i] = Neuron.random(28*28);
-        }
         out.print("creating the one layer");
 
-        final Layer layer = new SoftMaxLayer(neurons);
-//        final Layer layer = new ActivationLayer(neurons,Activations.sigmoidLogistic, Losses.mseLoss());
-        final Network network = new Network(layer);
+        final Layer layer = new SoftMaxLayer(28*28, 10);
+        layer.initRandom();
+        final ArrayList<Layer> layers = new ArrayList();
+        layers.add(layer);
+        final Network network = new Network(layers);
         
-        final Image[] sublist = new Image[(int) round(MnistImageReader.images.length * 0.2)];
+        final Image[] sublist = new Image[(int) round(MnistImageReader.images.length * 0.1)];
         List<Image> subCollection = Arrays.asList(MnistImageReader.images);
         Collections.shuffle(subCollection);
         subCollection = subCollection.subList(0, 10000);
@@ -44,7 +40,7 @@ public final class NetFromScratch {
             image.toFloat(imageFloat);
             final float[] target = new float[10];
             target[image.label()] = 1f;
-            samples.add(new Sample(imageFloat, target));
+            samples.add(new Sample<Image>(imageFloat, target, image));
         }
         
         final Random random = new Random();
@@ -61,10 +57,10 @@ public final class NetFromScratch {
         network.train(trainSamples);
         out.println("Training complete. Doing some predictions....");
         for(int i = 0; i < 10; i++) {
-            final Sample sample = testSamples.get(random.nextInt(testSamples.size()));
+            final Sample<Image> sample = testSamples.get(random.nextInt(testSamples.size()));
             final float[] prediction = network.predict(sample.x());
             out.println(sample.toString());
-            out.println(Network.showTarget(sample.target(), prediction));
+            out.println(Network.showTarget(sample.target(), prediction, sample.data()));
             out.println();
             
         }
