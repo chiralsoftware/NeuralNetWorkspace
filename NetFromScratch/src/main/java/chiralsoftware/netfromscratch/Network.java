@@ -11,6 +11,10 @@ final class Network {
 
     private static final System.Logger LOG = System.getLogger(Network.class.getName());
 
+    /** 
+     * Layer 0 is the first real layer with weights and activations. The Nth layer
+     * is the output layer.
+     */
     private final ArrayList<Layer> layers;
     
     static final float learningRate = 0.05f;
@@ -20,12 +24,11 @@ final class Network {
     }
     
     float[] predict(float[] x) {
-        final Layer l = layers.getFirst();
-        final float[] output = l.activated(l.raw(x));
-//        float[] output = x;
-//        for (Layer layer : layers) {
-//            output = layer.activated(output);
-//        }
+        float[] output = x;
+        for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
+            final Layer layer = layers.get(layerIndex);
+            output = layer.activated(layer.raw(output));
+        }
         return output;
     }
     

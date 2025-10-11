@@ -16,6 +16,7 @@ public final class NetFromScratch {
         out.print("Mnist set loaded");
         out.print("creating the one layer");
 
+//        final Layer layer = new SoftMaxLayer(28*28, 10);
         final Layer layer = new SoftMaxLayer(28*28, 10);
         layer.initRandom();
         final ArrayList<Layer> layers = new ArrayList();
