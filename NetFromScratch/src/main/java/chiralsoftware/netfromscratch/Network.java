@@ -32,7 +32,7 @@ final class Network {
         return output;
     }
     
-    int epochs = 600;
+    int epochs = 200;
     
     void train(List<Sample> samples) {
         final DecimalFormat df = new DecimalFormat("0.0000");
@@ -44,9 +44,9 @@ final class Network {
         for (int epoch = 0; epoch < epochs; epoch++) {
             float loss = 0;
             for(Batch b : batches) {
-                loss = b.process();
+                b.process();
             }
-            if (epoch % 100 == 0) {
+            if (epoch % 50 == 0) {
                 LOG.log(INFO, "Epoch " + epoch + ", loss: " + df.format(loss));
             }            
         }

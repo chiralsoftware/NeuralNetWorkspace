@@ -17,7 +17,7 @@ abstract class  Layer {
     abstract void update(float[] accumulatedWeightedGradient, float[]  accumulatedBiasGradient);
     
     Layer(int inputSize, int outputSize) {
-        weights = new float[outputSize][inputSize];
+        weights = new float[inputSize][outputSize];
         biases = new float[outputSize];
         this.outputSize = outputSize;
         this.inputSize = inputSize;
@@ -26,26 +26,27 @@ abstract class  Layer {
     /** Set random initialization values */
     void initRandom() {
         final Random random = new Random();
-        for(int i = 0; i < outputSize; i++) {
-            for(int j = 0; j < inputSize; j++) {
+        for(int i = 0; i < inputSize; i++) {
+            for(int j = 0; j < outputSize; j++) {
                 weights[i][j] = random.nextFloat() * 0.1f;
             }
-            biases[i] = 1f - random.nextFloat(0.5f);
         }
+        for(int j = 0; j < outputSize; j++)
+            biases[j] = 1f - random.nextFloat(0.5f);
+
     }
     
     final float[] raw(float[] input) {
-        if(input.length != inputSize) 
-            throw new IllegalArgumentException("the input length: " + input.length +
-                    " was not equal to the number of weights: " + inputSize);
-//        i = output neuron (row). i always ranges from 0 to biases.length
-//        j = input feature (column) j always ranges from 0 to weights[0].length
-        final float[] result = new float[biases.length];
-        for(int i = 0; i < outputSize; i++) {
-            for(int j = 0; j < inputSize; j++) {
-                result[i] += input[j] * weights[i][j];
+        if (input.length != inputSize)
+            throw new IllegalArgumentException("Input length " + input.length +
+                " does not match expected input size " + inputSize);
+
+        final float[] result = new float[outputSize];
+        for (int j = 0; j < outputSize; j++) {
+            for (int i = 0; i < inputSize; i++) {
+                result[j] += input[i] * weights[i][j];
             }
-            result[i] += biases[i];
+            result[j] += biases[j];
         }
         return result;
     }

@@ -17,23 +17,30 @@ public final class NetFromScratch {
         out.print("creating the one layer");
 
 //        final Layer layer = new SoftMaxLayer(28*28, 10);
-        final Layer layer = new SoftMaxLayer(28*28, 10);
-        layer.initRandom();
+//        final Layer layer = new SoftMaxLayer(28*28, 10);
+//        layer.initRandom();
+//        final ArrayList<Layer> layers = new ArrayList();
+//        layers.add(layer);
+
         final ArrayList<Layer> layers = new ArrayList();
-        layers.add(layer);
+        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 64);
+        sal.initRandom();
+        layers.add(sal);
+        final SoftMaxLayer soft = new SoftMaxLayer(64, 10);
+        soft.initRandom();
+        layers.add(soft);
         final Network network = new Network(layers);
         
-        final Image[] sublist = new Image[(int) round(MnistImageReader.images.length * 0.1)];
-        List<Image> subCollection = Arrays.asList(MnistImageReader.images);
-        Collections.shuffle(subCollection);
-        subCollection = subCollection.subList(0, 10000);
+        List<Image> collection = Arrays.asList(MnistImageReader.images);
+        Collections.shuffle(collection);
+        collection = collection.subList(0, 1000); // trim the training set size
         
         final List<Sample> samples = new ArrayList<>();
         
         out.println("applying network");
-        for(int i = 0; i < subCollection.size(); i++) {
-            final Image image = subCollection.get(i);
-            if(i % 1000 == 0) {
+        for(int i = 0; i < collection.size(); i++) {
+            final Image image = collection.get(i);
+            if(i % 100 == 0) {
                 out.println("Looking at image: " + image.label());
                 out.println(image.show());
             }

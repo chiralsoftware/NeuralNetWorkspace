@@ -49,6 +49,11 @@ final class SigmoidActivationLayer extends ActivationLayer {
         if (x > 40) return 1;  // Avoid overflow
         return 1f / (1f + (float)exp(-x));        
     }
+    
+    @Override
+    float activationDerivative(float x) {
+        return sigmoid(x) * (1f - sigmoid(x));
+    }
 
     @Override
     protected float loss(float[] input, float[] target) {

@@ -19,7 +19,8 @@ abstract class ActivationLayer extends Layer {
         }
         return sum / target.length;
     }
-
+    
+    abstract float activationDerivative(float x);
 
     @Override
     void update(float[] accumulatedWeightedGradient, float[]  accumulatedBiasGradient) {
