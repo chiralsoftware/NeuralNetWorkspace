@@ -4,7 +4,7 @@ import static java.lang.Math.round;
 import static java.lang.System.out;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import static java.util.Collections.shuffle;
 import java.util.List;
 import java.util.Random;
 
@@ -32,8 +32,8 @@ public final class NetFromScratch {
         final Network network = new Network(layers);
         
         List<Image> collection = Arrays.asList(MnistImageReader.images);
-        Collections.shuffle(collection);
-        collection = collection.subList(0, 1000); // trim the training set size
+        shuffle(collection);
+        collection = collection.subList(0, 2000); // trim the training set size
         
         final List<Sample> samples = new ArrayList<>();
         
@@ -52,16 +52,15 @@ public final class NetFromScratch {
         }
         
         final Random random = new Random();
-        Collections.shuffle(samples);
+        shuffle(samples);
         final int splitPoint = (int) round(samples.size() * 0.8);
         final ArrayList<Sample> trainSamples = new ArrayList(splitPoint);
         for(int i = 0; i < splitPoint; i++) {
             trainSamples.add(samples.get(i));
         }
         final ArrayList<Sample> testSamples = new ArrayList(samples.size() - trainSamples.size());
-        for(int i = 0; i < samples.size() - splitPoint; i++) {
+        for(int i = 0; i < samples.size() - splitPoint; i++)
             testSamples.add(samples.get(i + trainSamples.size()));
-        }
         network.train(trainSamples);
         out.println("Training complete. Doing some predictions....");
         for(int i = 0; i < 10; i++) {

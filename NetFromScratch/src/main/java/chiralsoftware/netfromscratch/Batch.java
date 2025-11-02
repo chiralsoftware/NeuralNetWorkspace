@@ -43,7 +43,7 @@ final class Batch {
         return loss / samples.size();
     }
     
-    void process() {
+    float process() {
         // this will be an irregular array because each layer may have different
         // shape
         final float[][][] weightGradientAccumulators = 
@@ -57,9 +57,11 @@ final class Batch {
             biasGradientAccumulators[layerIndex] = new float[layer.outputSize];
         }
 
+        float totalLoss = 0;
+        
         for (Sample sample : samples) {
-            float[] input = sample.x();
-            float[] target = sample.target();
+            final float[] input = sample.x();
+            final float[] target = sample.target();
 
             final float[][] rawOutputs = new float[layers.size()][];
             final float[][] activatedOutputs = new float[layers.size()][];
@@ -77,6 +79,8 @@ final class Batch {
 
                 currentInput = activated;
             }
+            // save the error of this
+            totalLoss += mseLoss(sample.target(), activatedOutputs[activatedOutputs.length - 1]);
 
             // Backward pass
             // layers.get(0) → input layer
@@ -90,7 +94,7 @@ final class Batch {
             final int outputLayerIndex = layers.size() - 1;
             final Layer outputLayer = layers.get(outputLayerIndex);
             {
-                final float[] prevActivation = (outputLayerIndex == 0) ? sample.x() : activatedOutputs[outputLayerIndex - 1];
+                final float[] prevActivation = outputLayerIndex == 0 ? sample.x() : activatedOutputs[outputLayerIndex - 1];
 
                 final float[][] outputLayerGradients = weightGradientAccumulators[outputLayerIndex];
                 final float[] outputBiasGradients = biasGradientAccumulators[outputLayerIndex];
@@ -119,7 +123,6 @@ final class Batch {
                     throw new IllegalStateException("at layer index: " + layerIndex + 
                             " the weightedGradientAccumulator length: " + currentLayerGradients.length + 
                             " doesn't match the layer input length: " + currentLayer.inputSize);
-//                out.println("Just set gradient at index: " + layerIndex + " to a array size: " + currentLayerGradients.length);
 
                 final float[] prevActivation = (layerIndex == 0) ? sample.x() : activatedOutputs[layerIndex - 1];
 
@@ -143,10 +146,18 @@ final class Batch {
 //        biases = new float[outputSize];
                         layer.weights[i][j] -= Network.learningRate * weightGradients[i][j] / samples.size();
                     }
-//                    layer.biases[i] -= Network.learningRate * biasGradients[i] / samples.size();
+                    layer.biases[j] -= Network.learningRate * biasGradients[j] / samples.size();
                 }
             }
         }
+        return totalLoss / samples.size();
+    }
+    
+    private static float mseLoss(float[] output, float[] target) {
+        if(output.length != target.length) throw new IllegalArgumentException("output length and target length must be equal");
+        float result = 0;
+        for (int i = 0; i < output.length ; i++) result += (output[i] - target[i]) * (output[i] - target[i]);
+        return result / output.length;
     }
     
 }

@@ -2,7 +2,6 @@ package chiralsoftware.netfromscratch;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 /**
  * Read the IDX stream format header, used to hold the MNIST sample images

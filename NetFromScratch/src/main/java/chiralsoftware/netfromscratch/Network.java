@@ -44,9 +44,9 @@ final class Network {
         for (int epoch = 0; epoch < epochs; epoch++) {
             float loss = 0;
             for(Batch b : batches) {
-                b.process();
+                loss = b.process();
             }
-            if (epoch % 50 == 0) {
+            if (epoch % 10 == 0) {
                 LOG.log(INFO, "Epoch " + epoch + ", loss: " + df.format(loss));
             }            
         }
