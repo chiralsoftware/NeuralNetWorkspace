@@ -37,14 +37,15 @@ final class Network {
     void train(List<Sample> samples) {
         final DecimalFormat df = new DecimalFormat("0.0000");
         final List<List<Sample>> partitionedSamples = partition(samples, 32);
-        final List<Batch> batches = partitionedSamples.stream().
-                map(listOfSamples -> new Batch(listOfSamples, layers)).
-                collect(toUnmodifiableList());
+        final BatchProcessor batchProcessor = new BatchProcessor(layers);
+//        final List<BatchProcessor> batches = partitionedSamples.stream().
+//                map(listOfSamples -> new BatchProcessor(listOfSamples, layers)).
+//                collect(toUnmodifiableList());
         
         for (int epoch = 0; epoch < epochs; epoch++) {
             float loss = 0;
-            for(Batch b : batches) {
-                loss = b.process();
+            for(List<Sample> batch : partitionedSamples) {
+                loss = batchProcessor.process(batch);
             }
             if (epoch % 10 == 0) {
                 LOG.log(INFO, "Epoch " + epoch + ", loss: " + df.format(loss));
