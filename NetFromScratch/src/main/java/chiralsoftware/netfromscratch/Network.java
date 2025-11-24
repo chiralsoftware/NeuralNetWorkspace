@@ -5,7 +5,6 @@ import static java.lang.System.Logger.Level.INFO;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 final class Network {
 
@@ -17,7 +16,7 @@ final class Network {
      */
     private final ArrayList<Layer> layers;
     
-    static final float learningRate = 0.05f;
+    static final float learningRate = 1f;
     
     public Network(ArrayList<Layer> layers) {
         this.layers = layers;
@@ -27,7 +26,9 @@ final class Network {
         float[] output = x;
         for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
             final Layer layer = layers.get(layerIndex);
-            output = layer.activated(layer.raw(output));
+            final float[] result = new float[layer.outputSize];
+            layer.raw(output, result);
+             output = layer.activated(result);
         }
         return output;
     }
@@ -35,12 +36,9 @@ final class Network {
     int epochs = 200;
     
     void train(List<Sample> samples) {
-        final DecimalFormat df = new DecimalFormat("0.0000");
+        final DecimalFormat df = new DecimalFormat("0.00000000");
         final List<List<Sample>> partitionedSamples = partition(samples, 32);
         final BatchProcessor batchProcessor = new BatchProcessor(layers);
-//        final List<BatchProcessor> batches = partitionedSamples.stream().
-//                map(listOfSamples -> new BatchProcessor(listOfSamples, layers)).
-//                collect(toUnmodifiableList());
         
         for (int epoch = 0; epoch < epochs; epoch++) {
             float loss = 0;

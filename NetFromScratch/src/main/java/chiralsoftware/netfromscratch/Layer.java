@@ -14,8 +14,6 @@ abstract class  Layer {
     public final int outputSize;
     public final int inputSize;
     
-    abstract void update(float[] accumulatedWeightedGradient, float[]  accumulatedBiasGradient);
-    
     Layer(int inputSize, int outputSize) {
         weights = new float[inputSize][outputSize];
         biases = new float[outputSize];
@@ -23,6 +21,10 @@ abstract class  Layer {
         this.inputSize = inputSize;
     }
     
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " inputSize=" + inputSize + ", outputSize=" + outputSize;
+    }
     /** Set random initialization values */
     void initRandom() {
         final Random random = new Random();
@@ -36,25 +38,35 @@ abstract class  Layer {
 
     }
     
-    final float[] raw(float[] input) {
+    /** Calculate z, the raw output of this layer. 
+     z = dot_product(weights, inputs) + bias
+     */
+    final void raw(float[] input, float[] result) {
         if (input.length != inputSize)
             throw new IllegalArgumentException("Input length " + input.length +
                 " does not match expected input size " + inputSize);
+        if(result.length != outputSize) 
+            throw new IllegalArgumentException("result array size: " + result.length + " does not match output size: " + outputSize);
 
-        final float[] result = new float[outputSize];
         for (int j = 0; j < outputSize; j++) {
             for (int i = 0; i < inputSize; i++) {
                 result[j] += input[i] * weights[i][j];
             }
             result[j] += biases[j];
         }
-        return result;
     }
 
-    protected abstract float[] gradient(float[] input, float[] target);
+    float[] lossDerivative(float[] input, float[] target, float[] result) {
+        throw new UnsupportedOperationException("this class doesn't support lossDerivative");
+    }
     
-    protected abstract float[] activated(float[] raw);
+    float[] activationDerivative(float[] raw) {
+        throw new UnsupportedOperationException("this class doesn't support activationDerivative");
+    }
     
-    protected abstract float loss(float[] input, float[] target) ;
+    /** Given the results of raw, return it with the activation applied. 
+     @param raw length == outputSize */
+    abstract float[] activated(float[] raw);
+    
     
 }

@@ -23,17 +23,17 @@ public final class NetFromScratch {
 //        layers.add(layer);
 
         final ArrayList<Layer> layers = new ArrayList();
-        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 64);
+        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 32);
         sal.initRandom();
         layers.add(sal);
-        final SoftMaxLayer soft = new SoftMaxLayer(64, 10);
+        final SoftMaxLayer soft = new SoftMaxLayer(32, 10);
         soft.initRandom();
         layers.add(soft);
         final Network network = new Network(layers);
         
         List<Image> collection = Arrays.asList(MnistImageReader.images);
         shuffle(collection);
-        collection = collection.subList(0, 2000); // trim the training set size
+        collection = collection.subList(0, 4000); // trim the training set size
         
         final List<Sample> samples = new ArrayList<>();
         

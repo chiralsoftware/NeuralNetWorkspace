@@ -1,7 +1,14 @@
 package chiralsoftware.netfromscratch;
 
+import static java.lang.Math.abs;
+import static java.lang.System.arraycopy;
+import static java.lang.System.exit;
+import static java.lang.System.out;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import jdk.incubator.vector.FloatVector;
 import static jdk.incubator.vector.FloatVector.zero;
 import jdk.incubator.vector.VectorSpecies;
@@ -22,11 +29,13 @@ final class BatchProcessor {
             new float[layers.size()][/* numWeightsPerNeuron */ ][ /*numNeuronsPerLayer */ ];
         biasGradientAccumulators = 
             new float[layers.size()][ /*numNeuronsPerLayer */ ];
+        deltas = new float[layers.size()][];
         // intitialize the accumulators
         for(int layerIndex = 0 ; layerIndex < layers.size(); layerIndex++) {
             final Layer layer = layers.get(layerIndex);
             weightGradientAccumulators[layerIndex] = new float[layer.inputSize][layer.outputSize];
             biasGradientAccumulators[layerIndex] = new float[layer.outputSize];
+            deltas[layerIndex] = new float[layer.outputSize];
         }
     }
     
@@ -34,8 +43,8 @@ final class BatchProcessor {
     private void reset() {
         for(int layer = 0; layer < biasGradientAccumulators.length; layer++) {
             zeroArray(biasGradientAccumulators[layer]);
-            for(int i = 0; i < weightGradientAccumulators[layer].length; i++) {
-                zeroArray(weightGradientAccumulators[layer][i]);
+            for (float[] weightGradientAccumulator : weightGradientAccumulators[layer]) {
+                zeroArray(weightGradientAccumulator);
             }
         }
         
@@ -49,30 +58,37 @@ final class BatchProcessor {
         for (; i < array.length; i++) array[i] = 0f;
     }
     
+    /** Elenment-wise multiple a1 and a2 and return the result in a new array
+     TODO move this to a vector utilities class */
+    static float[] elementwiseMultiply(float[] a1, float[] a2) {
+        assert(a1.length == a2.length);
+        final float[] result = new float[a1.length];
+        for(int i = 0; i < a1.length; i++) result[i] = a1[i] * a2[i];
+        return result;
+    }
+    
     // this will be an irregular array because each layer may have different
     // shape
     private final float[][][] weightGradientAccumulators;
     private final float[][] biasGradientAccumulators;
+    private final float[][] deltas;
     
     float process(List<Sample> samples) {
         reset();
         float totalLoss = 0;
         
         for (Sample sample : samples) {
-            final float[] input = sample.x();
-            final float[] target = sample.target();
-
             final float[][] rawOutputs = new float[layers.size()][];
             final float[][] activatedOutputs = new float[layers.size()][];
-            float[] currentInput = input;
+            float[] currentInput = sample.x();
 
-            // Forward pass
+            // Forward pass, compute raw outputs and activated outputs
             for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
                 final Layer layer = layers.get(layerIndex);
 
-                final float[] raw = layer.raw(currentInput);
+                final float[] raw = new float[layer.outputSize];
+                layer.raw(currentInput, raw);
                 final float[] activated = layer.activated(raw);
-
                 rawOutputs[layerIndex] = raw ;
                 activatedOutputs[layerIndex] = activated;
 
@@ -84,69 +100,100 @@ final class BatchProcessor {
             // Backward pass
             // layers.get(0) = input layer
             // layers.get(layers.size() - 1) = output layer
-
-            float[] nextDelta = layers.getLast().gradient(layers.size() == 1 ?
-                    sample.x() : // in a single layer, gradient is vs. the input
-                    activatedOutputs[activatedOutputs.length - 2] // with hidden layers, gradient vs last hidden layer output
-                    , target);
-
             final int outputLayerIndex = layers.size() - 1;
-            final Layer outputLayer = layers.get(outputLayerIndex);
             {
-                final float[] prevActivation = outputLayerIndex == 0 ? sample.x() : activatedOutputs[outputLayerIndex - 1];
-
-                final float[][] outputLayerGradients = weightGradientAccumulators[outputLayerIndex];
-                final float[] outputBiasGradients = biasGradientAccumulators[outputLayerIndex];
-
-                for (int i = 0; i < outputLayer.outputSize; i++) {
-                    for (int j = 0; j < outputLayer.inputSize; j++) {
-                        outputLayerGradients[j][i] += prevActivation[j] * nextDelta[i];
-                    }
-                    outputBiasGradients[i] += nextDelta[i];
-                }
+                final Layer outputLayer = layers.get(outputLayerIndex);
+                // set the delta at the output layer
+                final float[] result = new float[outputLayer.outputSize];
+                final float[] outputLayerDelta = outputLayer.lossDerivative(outputLayerIndex == 0 ?
+                        sample.x() : // in a single layer, gradient is vs. the input
+                        activatedOutputs[outputLayerIndex - 1] // with hidden layers, gradient vs last hidden layer output
+                        , sample.target(), result);
+                arraycopy(outputLayerDelta, 0, deltas[outputLayerIndex], 0, outputLayerDelta.length);
             }
 
-            for (int layerIndex = layers.size() - 2; layerIndex >= 0; layerIndex--) {
+            for (int layerIndex = outputLayerIndex - 1; layerIndex >= 0; layerIndex--) {
                 final Layer currentLayer = layers.get(layerIndex);
-                final Layer nextLayer = layers.get(layerIndex + 1);
-                
-                final float[] delta = new float[currentLayer.outputSize];
-                for(int j = 0; j < currentLayer.outputSize; j++) {
-                    for(int i = 0; i < nextDelta.length; i++) {
-                        delta[j] += nextLayer.weights[j][i] * nextDelta[i];
+                final Layer nextLayer = layers.get(layerIndex+1);
+                if(currentLayer == null) throw new NullPointerException("Layer object at layer: " + layerIndex +  " was not found");
+ 
+                // Multiply the weighted-delta vector by the derivative of the activation function
+                // evaluated at this layer’s activated output.
+//                W[i][j] = weight from current neuron i to next neuron j
+//                delta_next[j] = error signal for next neuron j
+//                f'(z_current[i]) = derivative of the activation function at the current neuron’s pre‑activation value
+        
+                final float[] currentLayerWeightedDelta = new float[currentLayer.outputSize];
+                if(currentLayer.outputSize != nextLayer.inputSize) 
+                    throw new IllegalStateException("curent layer: " + currentLayer + " output size does not match next layer: " + 
+                            nextLayer + " input size at layerIndex = " + layerIndex);
+                final float[] activationDerivative = currentLayer.activationDerivative(rawOutputs[layerIndex]);
+                for(int j = 0 ; j < currentLayer.outputSize; j++) {
+                    for (int i = 0; i < nextLayer.outputSize; i++ ) {
+//                        out.println("current layer: " + currentLayer + " at index: " + layerIndex + ", i=" + i + ", j=" + j);
+                        // delta_current[i] = ( sum over j of W[i][j] * delta_next[j] ) * f'(z_current[i])
+                        currentLayerWeightedDelta[j] += deltas[layerIndex + 1][i] * nextLayer.weights[j][i] * activationDerivative[j];
                     }
-                    delta[j] *= ((ActivationLayer) currentLayer).activationDerivative(activatedOutputs[layerIndex][j]);
                 }
-                final float[][] currentLayerGradients = weightGradientAccumulators[layerIndex];
-                if(currentLayerGradients.length != currentLayer.inputSize) 
-                    throw new IllegalStateException("at layer index: " + layerIndex + 
-                            " the weightedGradientAccumulator length: " + currentLayerGradients.length + 
-                            " doesn't match the layer input length: " + currentLayer.inputSize);
-
-                final float[] prevActivation = (layerIndex == 0) ? sample.x() : activatedOutputs[layerIndex - 1];
-
-                for(int i = 0; i < currentLayer.outputSize; i++) {
-                    for(int j = 0; j < currentLayer.inputSize; j++) {
-                        currentLayerGradients[j][i] += 
-                                prevActivation[j] * delta[i];
-                    }
-                    biasGradientAccumulators[layerIndex][i] += delta[i];
-                }
+                deltas[layerIndex] = currentLayerWeightedDelta;
             }
             for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
                 final Layer layer = layers.get(layerIndex);
-                final float[][] weightGradients = weightGradientAccumulators[layerIndex];
-                if(weightGradients == null) throw new NullPointerException("weightGradients was null at layer index: " + layerIndex);
-                final float[] biasGradients = biasGradientAccumulators[layerIndex];
+                currentInput = layerIndex == 0 ? sample.x() : activatedOutputs[layerIndex - 1];
+                if(currentInput.length != layer.inputSize) 
+                    throw new IllegalStateException("at layer index: " + layerIndex + 
+                            ", the input shape: "+ currentInput.length + " did not match the expected input shape of the layer: " + layer);
+                final float[] delta = deltas[layerIndex];
 
                 for (int j = 0; j < layer.outputSize; j++) {
                     for (int i = 0; i < layer.inputSize; i++) {
-//        weights = new float[inputSize][outputSize];
-//        biases = new float[outputSize];
-                        layer.weights[i][j] -= Network.learningRate * weightGradients[i][j] / samples.size();
+                        weightGradientAccumulators[layerIndex][i][j] += currentInput[i] * delta[j];
                     }
-                    layer.biases[j] -= Network.learningRate * biasGradients[j] / samples.size();
                 }
+
+                for (int j = 0; j < layer.outputSize; j++) {
+                    biasGradientAccumulators[layerIndex][j] += delta[j];
+                }
+            }
+        }
+        
+        // normalize the accumulated values
+        for(int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
+            final float[][] currentLayerWeightGradientAccumulators = weightGradientAccumulators[layerIndex];
+            final float[] currentLayerBiasAccumulators = biasGradientAccumulators[layerIndex];
+            final Layer currentLayer = layers.get(layerIndex);
+            for(int j = 0; j < currentLayer.outputSize; j++) {
+                for(int i = 0; i < currentLayer.inputSize; i++) {
+                    currentLayerWeightGradientAccumulators[i][j] /= samples.size();
+                }
+                currentLayerBiasAccumulators[j] /= samples.size();
+            }
+        }
+        
+
+        // apply the accumulated gradients
+        
+        for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
+            final Layer layer = layers.get(layerIndex);
+            final float[][] weightAccumulator = weightGradientAccumulators[layerIndex];
+            final float[] biasAccumulator = biasGradientAccumulators[layerIndex];
+            {
+                final String accumulatorCheck = weightedGradientAccumulatorCheck(weightAccumulator);
+                if(accumulatorCheck != null) {
+                    out.println("Gradient failure at layer: " + layerIndex +  ": "  + accumulatorCheck);
+                    for(int i = 0; i < weightAccumulator.length; i++) out.println("row:  " + i + ": " + showFloatArray(weightAccumulator[i]));
+                    exit(1);
+                }
+            }
+
+            for (int i = 0; i < layer.inputSize; i++) {
+                for (int j = 0; j < layer.outputSize; j++) {
+                    layer.weights[i][j] -= Network.learningRate * weightAccumulator[i][j];
+                }
+            }
+
+            for (int j = 0; j < layer.outputSize; j++) {
+                layer.biases[j] -= Network.learningRate * biasAccumulator[j];
             }
         }
         return totalLoss / samples.size();
@@ -159,31 +206,51 @@ final class BatchProcessor {
         return result / output.length;
     }
 
-    /** not used anymore */
-    private float processOneLayer(List<Sample> samples) {
-        final Layer layer = layers.get(0); // only one layer for now
-        final float[][] weightGradSum = new float[layer.outputSize][layer.inputSize];
-        final float[] biasGradSum = new float[layer.outputSize];
-        float loss = 0;
-        for(int sampleIndex = 0; sampleIndex < samples.size(); sampleIndex++) {
-            final Sample sample = samples.get(sampleIndex);
-            final float[] gradient = layer.gradient(sample.x(), sample.target());
-            loss += layer.loss(sample.x(), sample.target());
-            for (int i = 0; i < layer.outputSize; i++) {
-                for (int j = 0; j < layer.inputSize; j++) {
-                    weightGradSum[i][j] += gradient[i] * sample.x()[j];
-                }
-                biasGradSum[i] += gradient[i];
-            }
+    private static boolean almostEqualFloats(float f1, float f2) {
+        return abs(f1 - f2) < 1e-9;
+    }
+    
+    private static boolean almostEqualFloatArrays(float[] f1, float[] f2) {
+        if(f1.length != f2.length) throw new IllegalArgumentException("f1 length: " + f1.length + " did not equal f2 length: " + f2.length);
+        for(int i = 0; i < f1.length; i++) 
+            if(! almostEqualFloats(f1[i], f2[i])) return false;
+        return true;
+    }
+    
+    private static boolean almostZero(float[] f1) {
+        for(int i = 0;i < f1.length; i++)
+            if(abs(f1[i]) > 1e-10 ) return false;
+        return true;
+    }
+    
+    private static boolean overThreshold(float[] f1, float threshold) {
+        for(int i = 0; i < f1.length; i++) if(abs(f1[i]) > threshold) return true;
+        return false;
+    }
+    
+    /** Perform some sanity checks to see if something is wrong in the learning process */
+    private static String weightedGradientAccumulatorCheck(float[][] weightedGradientAccumulators) {
+        boolean fail = true;
+        for(int i = 0; i < weightedGradientAccumulators.length; i++) 
+            if(! almostZero(weightedGradientAccumulators[i])) fail = false; 
+        if(fail) return "Gradient arrays were almost all zero";
+        for(int i = 0 ; i < weightedGradientAccumulators.length; i++) {
+            if(overThreshold(weightedGradientAccumulators[i], 1e6f)) 
+                return "row " + i + " had a value over the threshold";
         }
-
-        for (int i = 0; i < layer.outputSize; i++) {
-            for (int j = 0; j < layer.inputSize; j++) {
-                layer.weights[i][j] -= Network.learningRate * weightGradSum[i][j] / samples.size();
-            }
-            layer.biases[i] -= Network.learningRate * biasGradSum[i] / samples.size();
+        for(int i = 1; i< weightedGradientAccumulators.length; i++) 
+            if(! almostEqualFloatArrays(weightedGradientAccumulators[0], weightedGradientAccumulators[i])) return null;
+        return "all rows are nearly equal";
+    }
+    
+    private static String showFloatArray(float[] f1) {
+        final DecimalFormat df = new DecimalFormat("0.000000");
+        final StringBuilder sb = new StringBuilder("[");
+        for(int i = 0; i < f1.length; i++) {
+            sb.append(df.format(f1[i]));
+            if(i != f1.length - 1) sb.append(", ");
         }
-        return loss / samples.size();
+        return sb.append("]").toString();
     }
     
 }
