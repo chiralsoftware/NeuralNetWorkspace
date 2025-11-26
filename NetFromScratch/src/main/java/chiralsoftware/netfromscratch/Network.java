@@ -1,7 +1,9 @@
 package chiralsoftware.netfromscratch;
 
+import static chiralsoftware.netfromscratch.BatchProcessor.zero2dArray;
 import static com.google.common.collect.Lists.partition;
 import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.arraycopy;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,21 +18,33 @@ final class Network {
      */
     private final ArrayList<Layer> layers;
     
-    static final float learningRate = 1f;
+    static final float learningRate = 0.5f;
     
     public Network(ArrayList<Layer> layers) {
         this.layers = layers;
+        rawOutputs = new float[layers.size()][];
+        activatedOutputs = new float[layers.size()][];
+        for(int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
+            rawOutputs[layerIndex] = new float[layers.get(layerIndex).outputSize];
+            activatedOutputs[layerIndex] = new float[layers.get(layerIndex).outputSize];
+        }
     }
     
-    float[] predict(float[] x) {
-        float[] output = x;
+    private final float[][] rawOutputs;
+    private final float[][] activatedOutputs;
+    
+    void predict(float[] x, float[] result) {
+        if(x.length != layers.getFirst().inputSize)
+            throw new IllegalArgumentException("the network input size: "+ x.length + 
+                    " did not equal the first layer input size: "+ layers.getFirst());
+        
         for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
             final Layer layer = layers.get(layerIndex);
-            final float[] result = new float[layer.outputSize];
-            layer.raw(output, result);
-             output = layer.activated(result);
+            layer.raw(layerIndex == 0 ? x : activatedOutputs[layerIndex - 1], 
+                    rawOutputs[layerIndex]);
+             layer.activated(rawOutputs[layerIndex], activatedOutputs[layerIndex]);
         }
-        return output;
+        arraycopy(activatedOutputs[activatedOutputs.length - 1], 0, result, 0, result.length);
     }
     
     int epochs = 200;

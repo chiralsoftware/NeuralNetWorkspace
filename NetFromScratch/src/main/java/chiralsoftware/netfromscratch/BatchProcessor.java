@@ -30,12 +30,19 @@ final class BatchProcessor {
         biasGradientAccumulators = 
             new float[layers.size()][ /*numNeuronsPerLayer */ ];
         deltas = new float[layers.size()][];
+        rawOutputs = new float[layers.size()][];
+        activatedOutputs = new float[layers.size()][];
+        activationDerivatives = new float[layers.size()][];
         // intitialize the accumulators
         for(int layerIndex = 0 ; layerIndex < layers.size(); layerIndex++) {
             final Layer layer = layers.get(layerIndex);
             weightGradientAccumulators[layerIndex] = new float[layer.inputSize][layer.outputSize];
             biasGradientAccumulators[layerIndex] = new float[layer.outputSize];
             deltas[layerIndex] = new float[layer.outputSize];
+            
+            rawOutputs[layerIndex] = new float[layer.outputSize];
+            activatedOutputs[layerIndex] = new float[layer.outputSize];
+            activationDerivatives[layerIndex] = new float[layer.outputSize];
         }
     }
     
@@ -50,6 +57,11 @@ final class BatchProcessor {
         
     }
     
+    static void zero2dArray(float[][] array) {
+        for(int layer = 0; layer < array.length; layer++)
+            zeroArray(array[layer]);
+    }
+    
     static void zeroArray(float[] array) {
         int i = 0;
         final int upperBound = SPECIES.loopBound(array.length);
@@ -58,7 +70,7 @@ final class BatchProcessor {
         for (; i < array.length; i++) array[i] = 0f;
     }
     
-    /** Elenment-wise multiple a1 and a2 and return the result in a new array
+    /** Element-wise multiple a1 and a2 and return the result in a new array
      TODO move this to a vector utilities class */
     static float[] elementwiseMultiply(float[] a1, float[] a2) {
         assert(a1.length == a2.length);
@@ -72,27 +84,21 @@ final class BatchProcessor {
     private final float[][][] weightGradientAccumulators;
     private final float[][] biasGradientAccumulators;
     private final float[][] deltas;
+    private final float[][] rawOutputs;
+    private final float[][] activatedOutputs;
+    private final float[][] activationDerivatives;
     
     float process(List<Sample> samples) {
         reset();
         float totalLoss = 0;
         
         for (Sample sample : samples) {
-            final float[][] rawOutputs = new float[layers.size()][];
-            final float[][] activatedOutputs = new float[layers.size()][];
-            float[] currentInput = sample.x();
-
             // Forward pass, compute raw outputs and activated outputs
             for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
                 final Layer layer = layers.get(layerIndex);
 
-                final float[] raw = new float[layer.outputSize];
-                layer.raw(currentInput, raw);
-                final float[] activated = layer.activated(raw);
-                rawOutputs[layerIndex] = raw ;
-                activatedOutputs[layerIndex] = activated;
-
-                currentInput = activated;
+                layer.raw(layerIndex == 0 ? sample.x() : activatedOutputs[layerIndex - 1], rawOutputs[layerIndex]);
+                layer.activated(rawOutputs[layerIndex], activatedOutputs[layerIndex]);
             }
             // save the error of this
             totalLoss += mseLoss(sample.target(), activatedOutputs[activatedOutputs.length - 1]);
@@ -104,14 +110,15 @@ final class BatchProcessor {
             {
                 final Layer outputLayer = layers.get(outputLayerIndex);
                 // set the delta at the output layer
-                final float[] result = new float[outputLayer.outputSize];
-                final float[] outputLayerDelta = outputLayer.lossDerivative(outputLayerIndex == 0 ?
+                outputLayer.lossDerivative(outputLayerIndex == 0 ?
                         sample.x() : // in a single layer, gradient is vs. the input
-                        activatedOutputs[outputLayerIndex - 1] // with hidden layers, gradient vs last hidden layer output
-                        , sample.target(), result);
-                arraycopy(outputLayerDelta, 0, deltas[outputLayerIndex], 0, outputLayerDelta.length);
+                        activatedOutputs[outputLayerIndex - 1], // with hidden layers, gradient vs last hidden layer output
+                        activatedOutputs[outputLayerIndex]
+                        , sample.target(), deltas[outputLayerIndex]);
+//                arraycopy(outputLayerDelta, 0, deltas[outputLayerIndex], 0, outputLayerDelta.length);
             }
 
+            // The heart of back propagation: compute deltas for every layer
             for (int layerIndex = outputLayerIndex - 1; layerIndex >= 0; layerIndex--) {
                 final Layer currentLayer = layers.get(layerIndex);
                 final Layer nextLayer = layers.get(layerIndex+1);
@@ -127,19 +134,20 @@ final class BatchProcessor {
                 if(currentLayer.outputSize != nextLayer.inputSize) 
                     throw new IllegalStateException("curent layer: " + currentLayer + " output size does not match next layer: " + 
                             nextLayer + " input size at layerIndex = " + layerIndex);
-                final float[] activationDerivative = currentLayer.activationDerivative(rawOutputs[layerIndex]);
+                currentLayer.activationDerivative(rawOutputs[layerIndex], activationDerivatives[layerIndex]);
                 for(int j = 0 ; j < currentLayer.outputSize; j++) {
                     for (int i = 0; i < nextLayer.outputSize; i++ ) {
 //                        out.println("current layer: " + currentLayer + " at index: " + layerIndex + ", i=" + i + ", j=" + j);
                         // delta_current[i] = ( sum over j of W[i][j] * delta_next[j] ) * f'(z_current[i])
-                        currentLayerWeightedDelta[j] += deltas[layerIndex + 1][i] * nextLayer.weights[j][i] * activationDerivative[j];
+                        currentLayerWeightedDelta[j] += deltas[layerIndex + 1][i] * nextLayer.weights[j][i] * activationDerivatives[layerIndex][j];
                     }
                 }
                 deltas[layerIndex] = currentLayerWeightedDelta;
             }
+            // Convert the deltas into gradients
             for (int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
                 final Layer layer = layers.get(layerIndex);
-                currentInput = layerIndex == 0 ? sample.x() : activatedOutputs[layerIndex - 1];
+                final float[] currentInput = layerIndex == 0 ? sample.x() : activatedOutputs[layerIndex - 1];
                 if(currentInput.length != layer.inputSize) 
                     throw new IllegalStateException("at layer index: " + layerIndex + 
                             ", the input shape: "+ currentInput.length + " did not match the expected input shape of the layer: " + layer);

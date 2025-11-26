@@ -1,7 +1,5 @@
 package chiralsoftware.netfromscratch;
 
-import static java.lang.System.Logger.Level.INFO;
-
 /**
  */
 abstract class ActivationLayer extends Layer {
@@ -16,26 +14,28 @@ abstract class ActivationLayer extends Layer {
     
     /** Take the raw output z and apply the activation function to it */
     @Override
-    final float[] activated(float[] raw) {
+    final void activated(float[] raw, float[] result) {
         if(raw.length != outputSize) 
             throw new RuntimeException("raw.length was: " + raw.length + 
                     ", should be inputSize = " + outputSize);
+        if(result.length != outputSize)
+            throw new RuntimeException("result length: " + 
+                    result.length + " is not equal to output size: " + outputSize);
         
-        final float[] result = new float[outputSize];
         for(int j = 0; j < outputSize; j++) result[j] = activation(raw[j]);
-        return result;
     }
     
     /** Take the raw output z and return derivative of the activation function */
     @Override
-    final float[] activationDerivative(float[] raw) {
+    final void activationDerivative(float[] raw, float[] result) {
         if(raw.length != outputSize)
             throw new IllegalArgumentException("the raw.length was: " + raw.length + 
                     " was not equal to outputSize: " + outputSize);
-        final float[] result = new float[outputSize];
+        if(result.length != outputSize)
+            throw new IllegalArgumentException("result length: " + 
+                    result.length + " was not equal to outputSize: " + outputSize);
         for(int i = 0; i < outputSize; i++) 
             result[i] = activationDerivative(raw[i]);
-        return result;
     }
     
 }

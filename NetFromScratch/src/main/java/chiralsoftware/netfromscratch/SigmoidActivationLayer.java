@@ -28,11 +28,9 @@ final class SigmoidActivationLayer extends ActivationLayer {
     void initRandom() {
         final Random random = new Random();
         final float bound = (float) sqrt((6f / (inputSize + outputSize)));
-      for(int i = 0; i < inputSize; i++) {
-          for(int j = 0; j < outputSize; j++) {
-              weights[i][j] = random.nextFloat() * bound * 2 - bound;
-          }
-      }  
+        for(int i = 0; i < inputSize; i++) 
+            for(int j = 0; j < outputSize; j++) 
+                weights[i][j] = random.nextFloat() * bound * 2 - bound;
     }
 
     @Override
@@ -52,7 +50,7 @@ final class SigmoidActivationLayer extends ActivationLayer {
     }
     
     @Override
-    protected float[] lossDerivative(float[] input, float[] target, float[] result) {
+    protected void lossDerivative(float[] input, float[] activated, float[] target, float[] result) {
         if (input.length != inputSize)
             throw new IllegalArgumentException("input length: " + 
                     input.length + " does not equal layer input size: " + inputSize);
@@ -62,18 +60,14 @@ final class SigmoidActivationLayer extends ActivationLayer {
         if(result.length != outputSize) 
             throw new IllegalArgumentException("result.length " + result.length + 
                     " does not match the output size: " + outputSize);
+        if(activated.length != outputSize)
+            throw new IllegalArgumentException("activated length: " + 
+                    activated.length + " does not equal output size: " + outputSize);
         
-        raw(input, result);
-        final float[] activatedOutput = activated(result);
-        final float[] gradient = new float[outputSize];
-
         for (int i = 0; i < outputSize; i++) {
-            final float error = activatedOutput[i] - target[i];
-            final float sigmoidDerivative = activatedOutput[i] * (1 - activatedOutput[i]);
-            gradient[i] = error * sigmoidDerivative;
+            final float error = activated[i] - target[i];
+            final float sigmoidDerivative = activated[i] * (1 - activated[i]);
+            result[i] = error * sigmoidDerivative;
         }
-
-        return gradient;
-    }
-    
+    }    
 }

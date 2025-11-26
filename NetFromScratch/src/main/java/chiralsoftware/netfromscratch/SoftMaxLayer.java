@@ -13,39 +13,35 @@ final class SoftMaxLayer extends Layer {
     }
 
     @Override
-    float[] activationDerivative(float[] input) {
+    void activationDerivative(float[] input, float[] result) {
         throw new 
         UnsupportedOperationException("SoftMax doesn't support activationDerivative and shouldn't be a hidden layer");
     }
 
     @Override
-    protected float[] activated(float[] raw) {
+    protected void activated(float[] raw, float[] result) {
         if(raw.length != outputSize ) 
             throw new IllegalArgumentException("raw[] length was: " + raw.length + 
                     " but expected outputSize: " + outputSize);
-        float max = NEGATIVE_INFINITY;
-        for (float val : raw) {
-            if (val > max) max = val;
-        }   
+        if(result.length != outputSize) 
+            throw new IllegalArgumentException("the result length: " + 
+                    result.length + " was not equal to the output size: "+ outputSize);
 
-        final float[] numerator = new float[outputSize];
+        float max = NEGATIVE_INFINITY; for (float val : raw) if (val > max) max = val;
+
         float denominator = 0f;
         for (int i = 0; i < outputSize; i++) {
             // Subtract max for numerical stability (avoids large exponentials)
-            numerator[i] = (float) exp(raw[i] - max);
-            denominator += numerator[i];
+            result[i] = (float) exp(raw[i] - max);
+            denominator += result[i];
         }
 
-        final float[] result = new float[outputSize];
-        for (int i = 0; i < outputSize; i++) 
-            result[i] = numerator[i] / denominator;
-
-        return result;
+        for (int i = 0; i < outputSize; i++) result[i] /= denominator;
     }
 
     /** very inefficient calculation of the gradient */
     @Override
-    protected float[] lossDerivative(float[] input, float[] target, float[] result) {
+    protected void lossDerivative(float[] input, float[] activated, float[] target, float[] result) {
         if(input.length !=  inputSize)
             throw new IllegalArgumentException("the length of the input array: " + 
                     input.length + " did not equal the number of weights: " + inputSize);
@@ -55,12 +51,16 @@ final class SoftMaxLayer extends Layer {
         if(result.length != outputSize) 
             throw new IllegalArgumentException("result length: " + result.length + 
                     " does not match output size: " + outputSize);
-        raw(input, result);
-        final float[] prediction = activated(result);
-        final float[] grad = new float[prediction.length];
-        for (int i = 0; i < prediction.length; i++) {
-            grad[i] = prediction[i] - target[i];
+
+//        raw(input, result);
+//        final float[] prediction = new float[result.length];
+//        activated(result, prediction);
+//        for (int i = 0; i < prediction.length; i++) {
+//            result[i] = prediction[i] - target[i];
+//        }
+        
+        for (int i = 0; i < activated.length; i++) {
+            result[i] = activated[i] - target[i];
         }
-        return grad;        
     }
 }

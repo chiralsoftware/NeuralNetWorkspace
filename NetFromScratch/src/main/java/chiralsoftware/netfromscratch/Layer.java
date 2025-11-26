@@ -49,24 +49,23 @@ abstract class  Layer {
             throw new IllegalArgumentException("result array size: " + result.length + " does not match output size: " + outputSize);
 
         for (int j = 0; j < outputSize; j++) {
-            for (int i = 0; i < inputSize; i++) {
-                result[j] += input[i] * weights[i][j];
-            }
+            result[j] = 0;
+            for (int i = 0; i < inputSize; i++) result[j] += input[i] * weights[i][j];
             result[j] += biases[j];
         }
     }
 
-    float[] lossDerivative(float[] input, float[] target, float[] result) {
+    void lossDerivative(float[] input, float[] activated, float[] target, float[] result) {
         throw new UnsupportedOperationException("this class doesn't support lossDerivative");
     }
     
-    float[] activationDerivative(float[] raw) {
+    void activationDerivative(float[] raw, float[] result) {
         throw new UnsupportedOperationException("this class doesn't support activationDerivative");
     }
     
     /** Given the results of raw, return it with the activation applied. 
      @param raw length == outputSize */
-    abstract float[] activated(float[] raw);
+    abstract void activated(float[] raw, float [] result);
     
     
 }

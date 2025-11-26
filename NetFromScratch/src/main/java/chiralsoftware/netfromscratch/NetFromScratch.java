@@ -23,13 +23,29 @@ public final class NetFromScratch {
 //        layers.add(layer);
 
         final ArrayList<Layer> layers = new ArrayList();
-        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 32);
-        sal.initRandom();
-        layers.add(sal);
+        
+//        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 64);
+//        sal.initRandom();
+//        layers.add(sal);
+//        final SoftMaxLayer soft = new SoftMaxLayer(64, 10);
+//        soft.initRandom();
+//        layers.add(soft);
+        
+//        final SoftMaxLayer soft = new SoftMaxLayer(28*28, 10);
+//        soft.initRandom();
+//        layers.add(soft);
+        
+        final SigmoidActivationLayer sal1 = new SigmoidActivationLayer(28*28, 64);
+        sal1.initRandom();
+        layers.add(sal1);
+        final SigmoidActivationLayer sal2 = new SigmoidActivationLayer(64,32);
+        sal2.initRandom();
+        layers.add(sal2);
         final SoftMaxLayer soft = new SoftMaxLayer(32, 10);
         soft.initRandom();
         layers.add(soft);
-        final Network network = new Network(layers);
+
+final Network network = new Network(layers);
         
         List<Image> collection = Arrays.asList(MnistImageReader.images);
         shuffle(collection);
@@ -63,11 +79,12 @@ public final class NetFromScratch {
             testSamples.add(samples.get(i + trainSamples.size()));
         network.train(trainSamples);
         out.println("Training complete. Doing some predictions....");
+        final float[] outputArray = new float[10];
         for(int i = 0; i < 10; i++) {
             final Sample<Image> sample = testSamples.get(random.nextInt(testSamples.size()));
-            final float[] prediction = network.predict(sample.x());
+            network.predict(sample.x(), outputArray);
             out.println(sample.toString());
-            out.println(Network.showTarget(sample.target(), prediction, sample.data()));
+            out.println(Network.showTarget(sample.target(), outputArray, sample.data()));
             out.println();
             
         }
