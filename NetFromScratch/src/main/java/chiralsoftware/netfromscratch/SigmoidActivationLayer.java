@@ -7,9 +7,9 @@ import java.util.Random;
 /**
  * Activation layer using Sigmoid
  */
-final class SigmoidActivationLayer extends ActivationLayer {
+public final class SigmoidActivationLayer extends ActivationLayer {
 
-    SigmoidActivationLayer(int inputSize, int outputSize) {
+    public SigmoidActivationLayer(int inputSize, int outputSize) {
         super(inputSize, outputSize);
     }
     
@@ -25,7 +25,7 @@ final class SigmoidActivationLayer extends ActivationLayer {
     Example: for your 768 inputs and 32 outputs, range is about [-0.085, 0.085].
     */
     @Override
-    void initRandom() {
+    public void initRandom() {
         final Random random = new Random();
         final float bound = (float) sqrt((6f / (inputSize + outputSize)));
         for(int i = 0; i < inputSize; i++) 

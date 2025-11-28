@@ -6,7 +6,7 @@ import java.util.Random;
  * A layer of neurons. There is no Neuron class anymore. The neurons
  * are held directly in the layer.
  */
-abstract class  Layer {
+public abstract class  Layer {
     
     protected final float[][] weights; // [outputSize][inputSize]
     protected final float[] biases; // [outputSize]
@@ -26,7 +26,7 @@ abstract class  Layer {
         return getClass().getSimpleName() + " inputSize=" + inputSize + ", outputSize=" + outputSize;
     }
     /** Set random initialization values */
-    void initRandom() {
+    public void initRandom() {
         final Random random = new Random();
         for(int i = 0; i < inputSize; i++) {
             for(int j = 0; j < outputSize; j++) {

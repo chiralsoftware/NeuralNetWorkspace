@@ -1,28 +1,37 @@
-package chiralsoftware.netfromscratch;
+package chiralsoftware.netfromscratch.samples;
 
+import chiralsoftware.netfromscratch.Image;
+import chiralsoftware.netfromscratch.Layer;
+import chiralsoftware.netfromscratch.MnistImageReader;
+import chiralsoftware.netfromscratch.Network;
+import chiralsoftware.netfromscratch.Sample;
+import chiralsoftware.netfromscratch.SigmoidActivationLayer;
+import chiralsoftware.netfromscratch.SoftMaxLayer;
+import chiralsoftware.netfromscratch.TrainingTracker;
+import com.google.common.collect.ImmutableList;
+import java.io.IOException;
 import static java.lang.Math.round;
-import static java.lang.System.out;
 import java.util.ArrayList;
 import java.util.Arrays;
 import static java.util.Collections.shuffle;
 import java.util.List;
 import java.util.Random;
 
-public final class NetFromScratch {
-
-    public static void main(String[] args) throws Exception {
-        out.println("Testing network from scratch");
+/** Train a basic two-layer MNIST network that will get to reasonable accuracy very
+ quickly */
+public final class MnistTwoLayer {
+    
+    private final ArrayList<Layer> layers = new ArrayList();
+    private final ArrayList<Sample> trainSamples;
+    
+    private Network network;
+    
+    public List<Layer> getLayers() {
+        return ImmutableList.copyOf(layers);
+    }
+    
+    public MnistTwoLayer(TrainingTracker trainingTracker) throws IOException {
         MnistImageReader.load();
-        out.print("Mnist set loaded");
-        out.print("creating the one layer");
-
-//        final Layer layer = new SoftMaxLayer(28*28, 10);
-//        final Layer layer = new SoftMaxLayer(28*28, 10);
-//        layer.initRandom();
-//        final ArrayList<Layer> layers = new ArrayList();
-//        layers.add(layer);
-
-        final ArrayList<Layer> layers = new ArrayList();
         
 //        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 64);
 //        sal.initRandom();
@@ -45,7 +54,7 @@ public final class NetFromScratch {
         soft.initRandom();
         layers.add(soft);
 
-        final Network network = new Network(layers, null);
+        network = new Network(layers, trainingTracker);
         
         List<Image> collection = Arrays.asList(MnistImageReader.images);
         shuffle(collection);
@@ -53,13 +62,8 @@ public final class NetFromScratch {
         
         final List<Sample> samples = new ArrayList<>();
         
-        out.println("applying network");
         for(int i = 0; i < collection.size(); i++) {
             final Image image = collection.get(i);
-            if(i % 100 == 0) {
-                out.println("Looking at image: " + image.label());
-                out.println(image.show());
-            }
             final float[] imageFloat = new float[28*28];
             image.toFloat(imageFloat);
             final float[] target = new float[10];
@@ -70,23 +74,18 @@ public final class NetFromScratch {
         final Random random = new Random();
         shuffle(samples);
         final int splitPoint = (int) round(samples.size() * 0.8);
-        final ArrayList<Sample> trainSamples = new ArrayList(splitPoint);
+        trainSamples = new ArrayList(splitPoint);
         for(int i = 0; i < splitPoint; i++) {
             trainSamples.add(samples.get(i));
         }
         final ArrayList<Sample> testSamples = new ArrayList(samples.size() - trainSamples.size());
         for(int i = 0; i < samples.size() - splitPoint; i++)
             testSamples.add(samples.get(i + trainSamples.size()));
-        network.train(trainSamples);
-        out.println("Training complete. Doing some predictions....");
-        final float[] outputArray = new float[10];
-        for(int i = 0; i < 10; i++) {
-            final Sample<Image> sample = testSamples.get(random.nextInt(testSamples.size()));
-            network.predict(sample.x(), outputArray);
-            out.println(sample.toString());
-            out.println(Network.showTarget(sample.target(), outputArray, sample.data()));
-            out.println();
-            
-        }
     }
+    
+    public void doIt() throws IOException {
+        System.out.println("ok i shoudl START TRAINING");
+        network.train(trainSamples);
+    }
+    
 }

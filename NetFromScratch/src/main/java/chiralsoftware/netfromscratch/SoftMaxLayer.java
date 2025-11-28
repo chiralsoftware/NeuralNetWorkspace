@@ -6,9 +6,9 @@ import static java.lang.Math.exp;
 /** 
  f(z_i) = exp(z_i) / sum(exp(z_j)) for all j in the layer
 */
-final class SoftMaxLayer extends Layer {
+public final class SoftMaxLayer extends Layer {
     
-    SoftMaxLayer(int inputSize, int outputSize) {
+    public SoftMaxLayer(int inputSize, int outputSize) {
         super(inputSize, outputSize);
     }
 

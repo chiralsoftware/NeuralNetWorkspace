@@ -19,10 +19,10 @@ public final class MnistImageReader {
 //        final Image[] images = new Image[imagesIdxHeader.dimensions()[0]];
         // for some reason this file seems truncated at 60000 images
         
-    static final Image[] images = new Image[60000];
+    public static final Image[] images = new Image[60000];
     
     /** Load the entire MNIST set into memory */
-    static void load() throws IOException {
+    public static void load() throws IOException {
         final String trainFileName = "train-images-idx3-ubyte.gz";
         final String labelFileName = "train-labels-idx1-ubyte.gz";
         final GZIPInputStream imageGzin = new GZIPInputStream(new FileInputStream(trainFileName));

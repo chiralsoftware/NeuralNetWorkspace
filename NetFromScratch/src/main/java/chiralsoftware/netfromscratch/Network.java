@@ -8,7 +8,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-final class Network {
+public final class Network {
 
     private static final System.Logger LOG = System.getLogger(Network.class.getName());
 
@@ -19,8 +19,9 @@ final class Network {
     private final ArrayList<Layer> layers;
     
     static final float learningRate = 0.5f;
+    private final TrainingTracker trainingTracker;
     
-    public Network(ArrayList<Layer> layers) {
+    public Network(ArrayList<Layer> layers, TrainingTracker trainingTracker) {
         this.layers = layers;
         rawOutputs = new float[layers.size()][];
         activatedOutputs = new float[layers.size()][];
@@ -28,12 +29,13 @@ final class Network {
             rawOutputs[layerIndex] = new float[layers.get(layerIndex).outputSize];
             activatedOutputs[layerIndex] = new float[layers.get(layerIndex).outputSize];
         }
+        this.trainingTracker = trainingTracker;
     }
     
     private final float[][] rawOutputs;
     private final float[][] activatedOutputs;
     
-    void predict(float[] x, float[] result) {
+    public void predict(float[] x, float[] result) {
         if(x.length != layers.getFirst().inputSize)
             throw new IllegalArgumentException("the network input size: "+ x.length + 
                     " did not equal the first layer input size: "+ layers.getFirst());
@@ -49,7 +51,7 @@ final class Network {
     
     int epochs = 200;
     
-    void train(List<Sample> samples) {
+    public void train(List<Sample> samples) {
         final DecimalFormat df = new DecimalFormat("0.00000000");
         final List<List<Sample>> partitionedSamples = partition(samples, 32);
         final BatchProcessor batchProcessor = new BatchProcessor(layers);
@@ -59,9 +61,7 @@ final class Network {
             for(List<Sample> batch : partitionedSamples) {
                 loss = batchProcessor.process(batch);
             }
-            if (epoch % 10 == 0) {
-                LOG.log(INFO, "Epoch " + epoch + ", loss: " + df.format(loss));
-            }            
+            trainingTracker.update(loss, 0, epoch, loss);
         }
     }
     
@@ -69,7 +69,7 @@ final class Network {
     private static final String ANSI_RED = "\u001B[31m";
     private static final String ANSI_GREEN = "\u001B[32m";
     
-    static String showTarget(float[] target, float[] prediction, Image image) {
+    public static String showTarget(float[] target, float[] prediction, Image image) {
         int correctResult = -1;
         float max = Float.MIN_VALUE;
         for(int i = 0; i < target.length; i++) {
