@@ -45,7 +45,7 @@ public final class NetFromScratch {
         soft.initRandom();
         layers.add(soft);
 
-        final Network network = new Network(layers, null);
+        final Network network = new Network(layers);
         
         List<Image> collection = Arrays.asList(MnistImageReader.images);
         shuffle(collection);

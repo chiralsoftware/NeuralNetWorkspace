@@ -1,14 +1,11 @@
 package chiralsoftware.netfromscratch;
 
 import static java.lang.Math.abs;
-import static java.lang.System.arraycopy;
-import static java.lang.System.exit;
+import static java.lang.Math.sqrt;
 import static java.lang.System.out;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import jdk.incubator.vector.FloatVector;
 import static jdk.incubator.vector.FloatVector.zero;
 import jdk.incubator.vector.VectorSpecies;
@@ -19,6 +16,8 @@ import jdk.incubator.vector.VectorSpecies;
 final class BatchProcessor {
     
     private final ArrayList<Layer> layers;
+    
+    private TrainingTracker trainingTracker = null;
     
     private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_PREFERRED;
     private static final FloatVector ZERO_VEC = zero(SPECIES);
@@ -166,6 +165,10 @@ final class BatchProcessor {
         }
         
         // normalize the accumulated values
+        if(trainingTracker != null) {
+            zeroArray(trainingTracker.getGradientAverages());
+            zeroArray(trainingTracker.getGradientStrandardDeviations());
+        }
         for(int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
             final float[][] currentLayerWeightGradientAccumulators = weightGradientAccumulators[layerIndex];
             final float[] currentLayerBiasAccumulators = biasGradientAccumulators[layerIndex];
@@ -173,8 +176,44 @@ final class BatchProcessor {
             for(int j = 0; j < currentLayer.outputSize; j++) {
                 for(int i = 0; i < currentLayer.inputSize; i++) {
                     currentLayerWeightGradientAccumulators[i][j] /= samples.size();
+                    if(trainingTracker != null) {
+                        final float[] gradientAverages = trainingTracker.getGradientAverages();
+                        gradientAverages[layerIndex] += currentLayerWeightGradientAccumulators[i][j];
+                    }
+                    trainingTracker.getGradientAverages()[layerIndex] += 
+                            biasGradientAccumulators[layerIndex][j];
                 }
                 currentLayerBiasAccumulators[j] /= samples.size();
+            }
+        }
+        if(trainingTracker != null) {
+            final float[] gradientAverages = trainingTracker.getGradientAverages();
+            for(int l = 0 ; l < layers.size(); l++ ) {
+                gradientAverages[l] /= 
+                        layers.get(l).inputSize * layers.get(l).outputSize + layers.get(l).outputSize;
+            }
+            
+            // do another pass to calculate the std. deviation of gradients
+            // future: optimize this using Welford's single pass calculation
+            for(int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
+                final Layer currentLayer = layers.get(layerIndex);
+                final float[] gradientStandardDeviations = 
+                        trainingTracker.getGradientStrandardDeviations();
+                for(int i= 0; i< currentLayer.inputSize; i++) {
+                    for(int j= 0; j < currentLayer.outputSize; j++) {
+                        gradientStandardDeviations[layerIndex] += 
+                                (weightGradientAccumulators[layerIndex][i][j] - gradientAverages[layerIndex]) *
+                                (weightGradientAccumulators[layerIndex][i][j] - gradientAverages[layerIndex]) ;
+                    }
+                }
+                for(int j = 0; j < currentLayer.outputSize; j++) {
+                    gradientStandardDeviations[layerIndex] += 
+                            (biasGradientAccumulators[layerIndex][j] - gradientAverages[layerIndex]) *
+                            (biasGradientAccumulators[layerIndex][j] - gradientAverages[layerIndex]);
+                }
+                gradientStandardDeviations[layerIndex] =
+                        (float) sqrt(gradientStandardDeviations[layerIndex] / 
+                                (currentLayer.inputSize * currentLayer.outputSize + currentLayer.outputSize));
             }
         }
         
@@ -190,7 +229,8 @@ final class BatchProcessor {
                 if(accumulatorCheck != null) {
                     out.println("Gradient failure at layer: " + layerIndex +  ": "  + accumulatorCheck);
                     for(int i = 0; i < weightAccumulator.length; i++) out.println("row:  " + i + ": " + showFloatArray(weightAccumulator[i]));
-                    exit(1);
+                    if(trainingTracker != null)
+                        trainingTracker.setMessage("Gradient failure at layer: " + layerIndex);
                 }
             }
 
@@ -259,6 +299,10 @@ final class BatchProcessor {
             if(i != f1.length - 1) sb.append(", ");
         }
         return sb.append("]").toString();
+    }
+    
+    public void setTrainingTracker(TrainingTracker trainingTracker) {
+        this.trainingTracker = trainingTracker;
     }
     
 }

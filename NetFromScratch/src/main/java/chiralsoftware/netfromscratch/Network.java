@@ -1,9 +1,8 @@
 package chiralsoftware.netfromscratch;
 
-import static chiralsoftware.netfromscratch.BatchProcessor.zero2dArray;
 import static com.google.common.collect.Lists.partition;
-import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.arraycopy;
+import static java.lang.System.out;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +18,9 @@ public final class Network {
     private final ArrayList<Layer> layers;
     
     static final float learningRate = 0.5f;
-    private final TrainingTracker trainingTracker;
+    private TrainingTracker trainingTracker;
     
-    public Network(ArrayList<Layer> layers, TrainingTracker trainingTracker) {
+    public Network(ArrayList<Layer> layers) {
         this.layers = layers;
         rawOutputs = new float[layers.size()][];
         activatedOutputs = new float[layers.size()][];
@@ -29,6 +28,9 @@ public final class Network {
             rawOutputs[layerIndex] = new float[layers.get(layerIndex).outputSize];
             activatedOutputs[layerIndex] = new float[layers.get(layerIndex).outputSize];
         }
+    }
+    
+    public void setTrainingTracker(TrainingTracker trainingTracker) {
         this.trainingTracker = trainingTracker;
     }
     
@@ -52,16 +54,16 @@ public final class Network {
     int epochs = 200;
     
     public void train(List<Sample> samples) {
-        final DecimalFormat df = new DecimalFormat("0.00000000");
         final List<List<Sample>> partitionedSamples = partition(samples, 32);
         final BatchProcessor batchProcessor = new BatchProcessor(layers);
+        batchProcessor.setTrainingTracker(trainingTracker);
         
         for (int epoch = 0; epoch < epochs; epoch++) {
             float loss = 0;
             for(List<Sample> batch : partitionedSamples) {
                 loss = batchProcessor.process(batch);
             }
-            trainingTracker.update(loss, 0, epoch, loss);
+            if(trainingTracker != null) trainingTracker.update(loss, 0, epoch, loss);
         }
     }
     

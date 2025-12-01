@@ -21,7 +21,7 @@ import java.util.Random;
  quickly */
 public final class MnistTwoLayer {
     
-    private final ArrayList<Layer> layers = new ArrayList();
+    private final ArrayList<Layer> layers;
     private final ArrayList<Sample> trainSamples;
     
     private Network network;
@@ -30,8 +30,9 @@ public final class MnistTwoLayer {
         return ImmutableList.copyOf(layers);
     }
     
-    public MnistTwoLayer(TrainingTracker trainingTracker) throws IOException {
+    public MnistTwoLayer(Network network, ArrayList<Layer> layers) throws IOException {
         MnistImageReader.load();
+        this.layers = layers;
         
 //        final SigmoidActivationLayer sal = new SigmoidActivationLayer(28*28, 64);
 //        sal.initRandom();
@@ -44,17 +45,7 @@ public final class MnistTwoLayer {
 //        soft.initRandom();
 //        layers.add(soft);
         
-        final SigmoidActivationLayer sal1 = new SigmoidActivationLayer(28*28, 64);
-        sal1.initRandom();
-        layers.add(sal1);
-        final SigmoidActivationLayer sal2 = new SigmoidActivationLayer(64,32);
-        sal2.initRandom();
-        layers.add(sal2);
-        final SoftMaxLayer soft = new SoftMaxLayer(32, 10);
-        soft.initRandom();
-        layers.add(soft);
-
-        network = new Network(layers, trainingTracker);
+        this.network = network;
         
         List<Image> collection = Arrays.asList(MnistImageReader.images);
         shuffle(collection);
@@ -68,7 +59,7 @@ public final class MnistTwoLayer {
             image.toFloat(imageFloat);
             final float[] target = new float[10];
             target[image.label()] = 1f;
-            samples.add(new Sample<Image>(imageFloat, target, image));
+            samples.add(new Sample<>(imageFloat, target, image));
         }
         
         final Random random = new Random();
