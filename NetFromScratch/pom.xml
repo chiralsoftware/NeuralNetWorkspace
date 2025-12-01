@@ -65,11 +65,19 @@
               <artifactId>maven-compiler-plugin</artifactId>
               <version>3.14.1</version>
               <configuration>
-                <release>25</release> <!-- Match your JDK version -->
+                <release>25</release>
                 <compilerArgs>
                     <!-- To run:
                     java - -add-modules jdk.incubator.vector -classpath target/NetFromScratch-1.0-SNAPSHOT.jar  chiralsoftware.netfromscratch.NetFromScratch 
- -->
+ -->            
+                    <!-- 
+ To generate the native image we need to track the JNI loading calls made by lanterna:
+LD_LIBRARY_PATH=/usr/java/graalvm-jdk-25+37.1/lib java - -add-modules jdk.incubator.vector 
+                    -agentlib:native-image-agent=config-output-dir=./META-INF/native-image -classpath target/NetFromScratch-1.0-SNAPSHOT.jar  chiralsoftware.netfromscratch.Dashboard
+
+/usr/java/graalvm-jdk-25+37.1//bin/native-image -H:+VectorAPISupport -H:ConfigurationFileDirectories=./META-INF/native-image  - -add-modules jdk.incubator.vector -classpath target/NetFromScratch-1.0-SNAPSHOT.jar chiralsoftware.netfromscratch.Dashboard
+
+-->
                   <arg>--add-modules</arg>
                   <arg>jdk.incubator.vector</arg>
                 </compilerArgs>

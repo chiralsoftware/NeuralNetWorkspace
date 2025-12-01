@@ -51,7 +51,7 @@ public final class Network {
         arraycopy(activatedOutputs[activatedOutputs.length - 1], 0, result, 0, result.length);
     }
     
-    int epochs = 200;
+    int epochs = 2000;
     
     public void train(List<Sample> samples) {
         final List<List<Sample>> partitionedSamples = partition(samples, 32);

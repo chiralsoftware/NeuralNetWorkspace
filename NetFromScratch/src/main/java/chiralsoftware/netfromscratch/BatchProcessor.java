@@ -168,6 +168,8 @@ final class BatchProcessor {
         if(trainingTracker != null) {
             zeroArray(trainingTracker.getGradientAverages());
             zeroArray(trainingTracker.getGradientStrandardDeviations());
+            for(int i = 0 ;i < trainingTracker.getGradientSignBalance().length; i++)
+                trainingTracker.getGradientSignBalance()[i] = 0;
         }
         for(int layerIndex = 0; layerIndex < layers.size(); layerIndex++) {
             final float[][] currentLayerWeightGradientAccumulators = weightGradientAccumulators[layerIndex];
@@ -179,14 +181,17 @@ final class BatchProcessor {
                     if(trainingTracker != null) {
                         final float[] gradientAverages = trainingTracker.getGradientAverages();
                         gradientAverages[layerIndex] += currentLayerWeightGradientAccumulators[i][j];
-                    }
-                    trainingTracker.getGradientAverages()[layerIndex] += 
+                        trainingTracker.getGradientAverages()[layerIndex] += 
                             biasGradientAccumulators[layerIndex][j];
+                        trainingTracker.getGradientSignBalance()[layerIndex] += 
+                                currentLayerWeightGradientAccumulators[i][j] >= 0 ? 1 : -1;
+                    }
                 }
                 currentLayerBiasAccumulators[j] /= samples.size();
             }
         }
         if(trainingTracker != null) {
+            
             final float[] gradientAverages = trainingTracker.getGradientAverages();
             for(int l = 0 ; l < layers.size(); l++ ) {
                 gradientAverages[l] /= 

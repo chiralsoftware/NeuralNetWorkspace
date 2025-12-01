@@ -198,12 +198,13 @@ public final class Dashboard {
             timeLabel.setText(String.format("Elapsed: %02d:%02d:%02d", 
                     elapsed.toHours(), elapsed.toMinutesPart(), elapsed.toSecondsPart()));
         }
-        layersTable.getTableModel().setCell(4, 1, "HELLO THERE DUDE: " + now());
         for(int l = 0; l < trainingTracker.getGradientAverages().length; l++) {
             layersTable.getTableModel().
                     setCell(4, l, df.format(trainingTracker.getGradientAverages()[l]));
             layersTable.getTableModel().
                     setCell(5, l, df.format(trainingTracker.getGradientStrandardDeviations()[l]));
+            layersTable.getTableModel().
+                    setCell(6, l, Integer.toString(trainingTracker.getGradientSignBalance()[l]));
         }
         gui.updateScreen();
     }

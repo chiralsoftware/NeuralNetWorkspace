@@ -13,6 +13,7 @@ public final class TrainingTracker {
         this.layers = layers;
         gradientAverages = new float[layers.size()];
         gradientStandardDeviations = new float[layers.size()];
+        gradientSignBalance = new int[layers.size()];
     }
     
     private final List<Layer> layers;
@@ -24,6 +25,7 @@ public final class TrainingTracker {
     private final List<Float> lossHistory = new ArrayList<>();
     private final float[] gradientAverages;
     private final float[] gradientStandardDeviations;
+    private final int[] gradientSignBalance;
     private String message = null;
 
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -140,4 +142,8 @@ public final class TrainingTracker {
  * which are acceptable for monitoring purposes. Do not persist or use for training logic.
  */
      public float[] getGradientStrandardDeviations() { return gradientStandardDeviations; }
+     
+     public int[] getGradientSignBalance() {
+         return gradientSignBalance;
+     }
 }
