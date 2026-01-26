@@ -1,6 +1,7 @@
 package chiralsoftware.netfromscratch;
 
 import com.google.common.collect.ImmutableList;
+import static java.time.Duration.between;
 import java.time.Instant;
 import static java.time.Instant.now;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -21,7 +22,10 @@ public final class TrainingTracker {
     private float accuracy;
     private int parameters;
     private int epoch;
+    private int samples;
     private Instant startTime = null;
+    private Instant speedTestStartTime = null;
+    private int speedTestStartSample;
     private final List<Float> lossHistory = new ArrayList<>();
     private final float[] gradientAverages;
     private final float[] gradientStandardDeviations;
@@ -30,13 +34,18 @@ public final class TrainingTracker {
 
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 
-    public void update(float accuracy, int parameters, int epoch, float loss) {
+    public void update(float accuracy, int parameters, int epoch, float loss, int samples) {
         rwLock.writeLock().lock();
         try {
             this.accuracy = accuracy;
             this.parameters = parameters;
             this.epoch = epoch;
             lossHistory.add(loss);
+            if(speedTestStartTime == null && 
+                    (between(startTime, now()).getSeconds() > 10)) {
+                speedTestStartTime = now();
+                speedTestStartSample = samples;
+            }
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -77,6 +86,17 @@ public final class TrainingTracker {
         rwLock.readLock().lock();
         try {
             return startTime;
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    public float getSamplesPerSecond() {
+        rwLock.readLock().lock();
+        try {
+            if(speedTestStartTime == null) return 0;
+            return ((float) samples - speedTestStartSample) / 
+                    between(speedTestStartTime, now()).getSeconds();
         } finally {
             rwLock.readLock().unlock();
         }
